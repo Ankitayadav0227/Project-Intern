@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Project Root",
+      "path": "."
+    },
+    {
+      "name": "Backend (Flask)",
+      "path": "backend"
+    },
+    {
+      "name": "Frontend (React)",
+      "path": "frontend"
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceRoot}/backend/venv/Scripts/python.exe"
+  }
+}

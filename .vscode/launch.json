@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: Flask Server",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/app.py",
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+      "env": {
+        "FLASK_ENV": "development",
+        "FLASK_DEBUG": "1"
+      }
+    },
+    {
+      "name": "Frontend: Vite App",
+      "type": "chrome",
+      "request": "launch",
+      "name": "Frontend: Launch Chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Backend & Frontend)",
+      "configurations": [
+        "Backend: Flask Server"
+      ]
+    }
+  ]
+}
