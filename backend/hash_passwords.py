@@ -1,22 +1,46 @@
+import os
+from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 from db import get_connection
 
+# Load variables from .env
+load_dotenv()
+
 
 def hash_admin_passwords():
+    conn = None
+    cursor = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Admin usernames and their plain passwords
+        # Get admin passwords from .env
         admins = [
-            ("Mahesh Pandey", "#mahesh@987"),
-            ("Samiksha Kathale", "#samiksha987"),
-            ("Satyam Kumar", "#satyam987")
+            (
+                "Mahesh Pandey",
+                os.getenv("ADMIN_MAHESH_PASSWORD")
+            ),
+            (
+                "Samiksha Kathale",
+                os.getenv("ADMIN_SAMIKSHA_PASSWORD")
+            ),
+            (
+                "Satyam Kumar",
+                os.getenv("ADMIN_SATYAM_PASSWORD")
+            )
         ]
 
         print("\nHashing Admin Passwords...\n")
 
         for username, password in admins:
+
+            # Check if password exists in .env
+            if not password:
+                print(f"❌ Password not found in .env for {username}")
+                continue
+
+            # Generate secure hash
             hashed_password = generate_password_hash(password)
 
             cursor.execute(
@@ -44,16 +68,23 @@ def hash_admin_passwords():
     finally:
         if cursor:
             cursor.close()
+
         if conn:
             conn.close()
 
 
 def hash_intern_passwords():
+    conn = None
+    cursor = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT intern_id, full_name, password FROM interns")
+        cursor.execute(
+            "SELECT intern_id, full_name, password FROM interns"
+        )
+
         interns = cursor.fetchall()
 
         print("\nHashing Intern Passwords...\n")
@@ -65,6 +96,7 @@ def hash_intern_passwords():
                 print(f"⏩ {full_name} -> Already hashed.")
                 continue
 
+            # Generate secure hash
             hashed_password = generate_password_hash(password)
 
             cursor.execute(
@@ -89,6 +121,7 @@ def hash_intern_passwords():
     finally:
         if cursor:
             cursor.close()
+
         if conn:
             conn.close()
 
