@@ -9,9 +9,7 @@ function AdminMessages() {
   // ADMIN
   // =========================================================
 
-  const admin = JSON.parse(
-    localStorage.getItem("admin")
-  );
+  const admin = JSON.parse(localStorage.getItem("admin"));
 
   const adminName =
     admin?.full_name ||
@@ -24,22 +22,13 @@ function AdminMessages() {
   // =========================================================
 
   const [messages, setMessages] = useState([]);
-
-  const [selectedIntern, setSelectedIntern] =
-    useState(null);
-
+  const [selectedIntern, setSelectedIntern] = useState(null);
   const [reply, setReply] = useState("");
-
-  const [selectedFile, setSelectedFile] =
-    useState(null);
-
+  const [selectedFile, setSelectedFile] = useState(null);
   const [search, setSearch] = useState("");
-
-  const [showSidebar, setShowSidebar] =
-    useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const fileInputRef = useRef(null);
-
   const chatEndRef = useRef(null);
 
   // =========================================================
@@ -48,9 +37,7 @@ function AdminMessages() {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(
-  `${API_URL}/messages/admin`
-);
+      const res = await axios.get(`${API_URL}/messages/admin`);
 
       setMessages(res.data.data || []);
     } catch (error) {
@@ -100,45 +87,31 @@ function AdminMessages() {
     if (!internMap.has(msg.intern_id)) {
       internMap.set(msg.intern_id, {
         intern_id: msg.intern_id,
-        full_name:
-          msg.full_name ||
-          "Unknown Intern",
+        full_name: msg.full_name || "Unknown Intern",
         email: msg.email || "",
         messages: [],
       });
     }
 
-    internMap
-      .get(msg.intern_id)
-      .messages.push(msg);
+    internMap.get(msg.intern_id).messages.push(msg);
   });
 
-  const interns = Array.from(
-    internMap.values()
-  );
+  const interns = Array.from(internMap.values());
 
   // =========================================================
   // SEARCH INTERN
   // =========================================================
 
-  const filteredInterns = interns.filter(
-    (intern) => {
-      const name =
-        intern.full_name?.toLowerCase() || "";
+  const filteredInterns = interns.filter((intern) => {
+    const name = intern.full_name?.toLowerCase() || "";
+    const email = intern.email?.toLowerCase() || "";
+    const searchText = search.toLowerCase();
 
-      const email =
-        intern.email?.toLowerCase() || "";
-
-      return (
-        name.includes(
-          search.toLowerCase()
-        ) ||
-        email.includes(
-          search.toLowerCase()
-        )
-      );
-    }
-  );
+    return (
+      name.includes(searchText) ||
+      email.includes(searchText)
+    );
+  });
 
   // =========================================================
   // SELECTED INTERN MESSAGES
@@ -148,9 +121,7 @@ function AdminMessages() {
     ? messages.filter(
         (msg) =>
           Number(msg.intern_id) ===
-          Number(
-            selectedIntern.intern_id
-          )
+          Number(selectedIntern.intern_id)
       )
     : [];
 
@@ -176,9 +147,7 @@ function AdminMessages() {
     }
 
     const last =
-      intern.messages[
-        intern.messages.length - 1
-      ];
+      intern.messages[intern.messages.length - 1];
 
     if (last.file_name) {
       return `📎 ${last.file_name}`;
@@ -194,15 +163,13 @@ function AdminMessages() {
   const selectIntern = async (intern) => {
     setSelectedIntern(intern);
 
-    // Mark intern messages as read
-    const unreadMessages =
-      messages.filter(
-        (msg) =>
-          Number(msg.intern_id) ===
-            Number(intern.intern_id) &&
-          msg.sender === "intern" &&
-          !msg.is_read
-      );
+    const unreadMessages = messages.filter(
+      (msg) =>
+        Number(msg.intern_id) ===
+          Number(intern.intern_id) &&
+        msg.sender === "intern" &&
+        !msg.is_read
+    );
 
     try {
       await Promise.all(
@@ -213,7 +180,6 @@ function AdminMessages() {
         )
       );
 
-      // Refresh so UI updates
       await fetchMessages();
     } catch (error) {
       console.log(
@@ -232,35 +198,25 @@ function AdminMessages() {
       return;
     }
 
-    if (
-      !reply.trim() &&
-      !selectedFile
-    ) {
+    if (!reply.trim() && !selectedFile) {
       return;
     }
 
     try {
       const formData = new FormData();
 
-      // Sender admin
-      formData.append(
-        "sender",
-        "admin"
-      );
+      formData.append("sender", "admin");
 
-      // Admin name
       formData.append(
         "sender_name",
         adminName
       );
 
-      // Current intern
       formData.append(
         "intern_id",
         selectedIntern.intern_id
       );
 
-      // Receiver is intern
       formData.append(
         "receiver_id",
         selectedIntern.intern_id
@@ -271,18 +227,13 @@ function AdminMessages() {
         "intern"
       );
 
-      // Message
       formData.append(
         "message",
         reply.trim()
       );
 
-      // File
       if (selectedFile) {
-        formData.append(
-          "file",
-          selectedFile
-        );
+        formData.append("file", selectedFile);
       }
 
       await axios.post(
@@ -290,15 +241,12 @@ function AdminMessages() {
         formData,
         {
           headers: {
-            "Content-Type":
-              "multipart/form-data",
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      // Clear input
       setReply("");
-
       setSelectedFile(null);
 
       if (fileInputRef.current) {
@@ -324,21 +272,15 @@ function AdminMessages() {
   // =========================================================
 
   const handleFileSelect = (e) => {
-    const file =
-      e.target.files?.[0];
+    const file = e.target.files?.[0];
 
     if (!file) {
       return;
     }
 
     // 10 MB
-    if (
-      file.size >
-      10 * 1024 * 1024
-    ) {
-      alert(
-        "Maximum file size is 10 MB"
-      );
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Maximum file size is 10 MB");
 
       e.target.value = "";
 
@@ -446,29 +388,9 @@ function AdminMessages() {
       return "";
     }
 
-    return new Date(
-      date
-    ).toLocaleTimeString([], {
+    return new Date(date).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
-    });
-  };
-
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
-
-  const formatDate = (date) => {
-    if (!date) {
-      return "";
-    }
-
-    return new Date(
-      date
-    ).toLocaleDateString([], {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
     });
   };
 
@@ -478,15 +400,11 @@ function AdminMessages() {
 
   return (
     <AdminLayout>
-
       <div className="container-fluid">
 
-        {/* ================================================= */}
         {/* PAGE TITLE */}
-        {/* ================================================= */}
 
         <div className="mb-3">
-
           <h2 className="fw-bold mb-1">
             💬 Messages
           </h2>
@@ -494,12 +412,9 @@ function AdminMessages() {
           <small className="text-muted">
             Chat with interns
           </small>
-
         </div>
 
-        {/* ================================================= */}
         {/* MAIN CHAT */}
-        {/* ================================================= */}
 
         <div
           className="card shadow border-0"
@@ -509,28 +424,21 @@ function AdminMessages() {
             overflow: "hidden",
           }}
         >
-
-          <div
-            className="d-flex h-100"
-          >
+          <div className="d-flex h-100">
 
             {/* ================================================= */}
             {/* SIDEBAR */}
             {/* ================================================= */}
 
             {showSidebar && (
-
               <div
                 style={{
                   width: "300px",
                   minWidth: "300px",
-                  borderRight:
-                    "1px solid #ddd",
-                  background:
-                    "#ffffff",
+                  borderRight: "1px solid #ddd",
+                  background: "#ffffff",
                   display: "flex",
-                  flexDirection:
-                    "column",
+                  flexDirection: "column",
                 }}
               >
 
@@ -539,43 +447,31 @@ function AdminMessages() {
                 <div
                   style={{
                     padding: "16px",
-                    background:
-                      "#f0f2f5",
-                    borderBottom:
-                      "1px solid #ddd",
+                    background: "#f0f2f5",
+                    borderBottom: "1px solid #ddd",
                   }}
                 >
-
-                  <div
-                    className="d-flex justify-content-between align-items-center"
-                  >
+                  <div className="d-flex justify-content-between align-items-center">
 
                     <div>
-
                       <h5 className="fw-bold mb-0">
                         Intern Chats
                       </h5>
 
                       <small className="text-muted">
-                        {interns.length}{" "}
-                        conversations
+                        {interns.length} conversations
                       </small>
-
                     </div>
 
                     <button
                       className="btn btn-light"
                       onClick={() =>
-                        setShowSidebar(
-                          false
-                        )
+                        setShowSidebar(false)
                       }
                     >
                       ✕
                     </button>
-
                   </div>
-
                 </div>
 
                 {/* SEARCH */}
@@ -583,28 +479,21 @@ function AdminMessages() {
                 <div
                   style={{
                     padding: "12px",
-                    borderBottom:
-                      "1px solid #eee",
+                    borderBottom: "1px solid #eee",
                   }}
                 >
-
                   <div
                     className="d-flex align-items-center"
                     style={{
-                      background:
-                        "#f0f2f5",
-                      borderRadius:
-                        "10px",
-                      padding:
-                        "8px 12px",
+                      background: "#f0f2f5",
+                      borderRadius: "10px",
+                      padding: "8px 12px",
                     }}
                   >
-
                     <span
                       style={{
                         fontSize: "18px",
-                        marginRight:
-                          "8px",
+                        marginRight: "8px",
                       }}
                     >
                       🔍
@@ -614,22 +503,17 @@ function AdminMessages() {
                       type="text"
                       value={search}
                       onChange={(e) =>
-                        setSearch(
-                          e.target.value
-                        )
+                        setSearch(e.target.value)
                       }
                       placeholder="Search contact..."
                       style={{
                         border: "none",
                         outline: "none",
-                        background:
-                          "transparent",
+                        background: "transparent",
                         width: "100%",
                       }}
                     />
-
                   </div>
-
                 </div>
 
                 {/* INTERN LIST */}
@@ -640,193 +524,123 @@ function AdminMessages() {
                     overflowY: "auto",
                   }}
                 >
-
-                  {filteredInterns.length ===
-                  0 ? (
-
-                    <div
-                      className="text-center text-muted p-4"
-                    >
-
-                      <div
-                        style={{
-                          fontSize:
-                            "40px",
-                        }}
-                      >
+                  {filteredInterns.length === 0 ? (
+                    <div className="text-center text-muted p-4">
+                      <div style={{ fontSize: "40px" }}>
                         👥
                       </div>
 
                       <p className="mb-0">
                         No interns found
                       </p>
-
                     </div>
-
                   ) : (
+                    filteredInterns.map((intern) => {
+                      const unread =
+                        getUnreadCount(intern);
 
-                    filteredInterns.map(
-                      (intern) => {
+                      const active =
+                        selectedIntern &&
+                        Number(
+                          selectedIntern.intern_id
+                        ) ===
+                          Number(intern.intern_id);
 
-                        const unread =
-                          getUnreadCount(
-                            intern
-                          );
+                      return (
+                        <div
+                          key={intern.intern_id}
+                          onClick={() =>
+                            selectIntern(intern)
+                          }
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            padding: "12px 15px",
+                            cursor: "pointer",
+                            background: active
+                              ? "#e9edef"
+                              : "#ffffff",
+                            borderBottom:
+                              "1px solid #f0f0f0",
+                          }}
+                        >
 
-                        const active =
-                          selectedIntern &&
-                          Number(
-                            selectedIntern.intern_id
-                          ) ===
-                            Number(
-                              intern.intern_id
-                            );
-
-                        return (
+                          {/* AVATAR */}
 
                           <div
-                            key={
-                              intern.intern_id
-                            }
-                            onClick={() =>
-                              selectIntern(
-                                intern
-                              )
-                            }
                             style={{
-                              display:
-                                "flex",
-                              alignItems:
-                                "center",
-                              padding:
-                                "12px 15px",
-                              cursor:
-                                "pointer",
+                              width: "48px",
+                              height: "48px",
+                              minWidth: "48px",
+                              borderRadius: "50%",
                               background:
-                                active
-                                  ? "#e9edef"
-                                  : "#ffffff",
-                              borderBottom:
-                                "1px solid #f0f0f0",
+                                "rgb(2,26,77)",
+                              color: "white",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: "bold",
+                              fontSize: "19px",
+                              marginRight: "12px",
                             }}
                           >
-
-                            {/* AVATAR */}
-
-                            <div
-                              style={{
-                                width:
-                                  "48px",
-                                height:
-                                  "48px",
-                                minWidth:
-                                  "48px",
-                                borderRadius:
-                                  "50%",
-                                background:
-                                  "rgb(2,26,77)",
-                                color:
-                                  "white",
-                                display:
-                                  "flex",
-                                alignItems:
-                                  "center",
-                                justifyContent:
-                                  "center",
-                                fontWeight:
-                                  "bold",
-                                fontSize:
-                                  "19px",
-                                marginRight:
-                                  "12px",
-                              }}
-                            >
-                              {(
-                                intern.full_name ||
-                                "I"
-                              )
-                                .charAt(0)
-                                .toUpperCase()}
-                            </div>
-
-                            {/* DETAILS */}
-
-                            <div
-                              style={{
-                                flex: 1,
-                                minWidth:
-                                  0,
-                              }}
-                            >
-
-                              <div
-                                className="d-flex justify-content-between"
-                              >
-
-                                <strong
-                                  style={{
-                                    fontSize:
-                                      "15px",
-                                  }}
-                                >
-                                  {
-                                    intern.full_name
-                                  }
-                                </strong>
-
-                                {unread >
-                                  0 && (
-
-                                  <span
-                                    className="badge bg-danger"
-                                    style={{
-                                      borderRadius:
-                                        "50%",
-                                      minWidth:
-                                        "22px",
-                                      height:
-                                        "22px",
-                                      display:
-                                        "flex",
-                                      alignItems:
-                                        "center",
-                                      justifyContent:
-                                        "center",
-                                    }}
-                                  >
-                                    {unread}
-                                  </span>
-
-                                )}
-
-                              </div>
-
-                              <div
-                                className="text-muted text-truncate"
-                                style={{
-                                  fontSize:
-                                    "13px",
-                                  maxWidth:
-                                    "200px",
-                                }}
-                              >
-                                {getLastMessage(
-                                  intern
-                                )}
-                              </div>
-
-                            </div>
-
+                            {(
+                              intern.full_name || "I"
+                            )
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
 
-                        );
-                      }
-                    )
+                          {/* DETAILS */}
 
+                          <div
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                          >
+                            <div className="d-flex justify-content-between">
+
+                              <strong
+                                style={{
+                                  fontSize: "15px",
+                                }}
+                              >
+                                {intern.full_name}
+                              </strong>
+
+                              {unread > 0 && (
+                                <span
+                                  className="badge bg-danger"
+                                  style={{
+                                    borderRadius: "50%",
+                                    minWidth: "22px",
+                                    height: "22px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  {unread}
+                                </span>
+                              )}
+                            </div>
+
+                            <div
+                              className="text-muted text-truncate"
+                              style={{
+                                fontSize: "13px",
+                                maxWidth: "200px",
+                              }}
+                            >
+                              {getLastMessage(intern)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
-
                 </div>
-
               </div>
             )}
 
@@ -839,176 +653,121 @@ function AdminMessages() {
                 flex: 1,
                 minWidth: 0,
                 display: "flex",
-                flexDirection:
-                  "column",
+                flexDirection: "column",
               }}
             >
 
-              {/* ================================================= */}
               {/* CHAT HEADER */}
-              {/* ================================================= */}
 
               {selectedIntern ? (
-
                 <div
                   style={{
                     height: "70px",
                     minHeight: "70px",
-                    background:
-                      "rgb(2,26,77)",
+                    background: "rgb(2,26,77)",
                     color: "white",
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    padding:
-                      "10px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "10px 18px",
                   }}
                 >
 
                   {!showSidebar && (
-
                     <button
                       className="btn btn-light me-3"
                       onClick={() =>
-                        setShowSidebar(
-                          true
-                        )
+                        setShowSidebar(true)
                       }
                     >
                       ☰
                     </button>
-
                   )}
-
-                  {/* AVATAR */}
 
                   <div
                     style={{
                       width: "45px",
                       height: "45px",
                       minWidth: "45px",
-                      borderRadius:
-                        "50%",
-                      background:
-                        "white",
-                      color:
-                        "rgb(2,26,77)",
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
-                      justifyContent:
-                        "center",
-                      fontWeight:
-                        "bold",
-                      fontSize:
-                        "18px",
-                      marginRight:
-                        "12px",
+                      borderRadius: "50%",
+                      background: "white",
+                      color: "rgb(2,26,77)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: "bold",
+                      fontSize: "18px",
+                      marginRight: "12px",
                     }}
                   >
                     {(
-                      selectedIntern.full_name ||
-                      "I"
+                      selectedIntern.full_name || "I"
                     )
                       .charAt(0)
                       .toUpperCase()}
                   </div>
 
                   <div>
-
                     <div
                       className="fw-bold"
                       style={{
-                        fontSize:
-                          "17px",
+                        fontSize: "17px",
                       }}
                     >
-                      {
-                        selectedIntern.full_name
-                      }
+                      {selectedIntern.full_name}
                     </div>
 
                     <small>
-                      {
-                        selectedIntern.email
-                      }
+                      {selectedIntern.email}
                     </small>
-
                   </div>
-
                 </div>
-
               ) : (
-
                 <div
                   style={{
                     height: "70px",
                     minHeight: "70px",
-                    background:
-                      "rgb(2,26,77)",
+                    background: "rgb(2,26,77)",
                     color: "white",
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    padding:
-                      "10px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "10px 18px",
                   }}
                 >
 
                   {!showSidebar && (
-
                     <button
                       className="btn btn-light me-3"
                       onClick={() =>
-                        setShowSidebar(
-                          true
-                        )
+                        setShowSidebar(true)
                       }
                     >
                       ☰
                     </button>
-
                   )}
 
                   <h5 className="mb-0">
                     💬 Select an intern
                   </h5>
-
                 </div>
-
               )}
 
-              {/* ================================================= */}
               {/* CHAT BODY */}
-              {/* ================================================= */}
 
               <div
                 style={{
                   flex: 1,
                   overflowY: "auto",
                   padding: "20px",
-                  background:
-                    "#efeae2",
+                  background: "#efeae2",
                 }}
               >
 
                 {!selectedIntern ? (
-
-                  <div
-                    className="h-100 d-flex justify-content-center align-items-center"
-                  >
-
-                    <div
-                      className="text-center"
-                    >
-
+                  <div className="h-100 d-flex justify-content-center align-items-center">
+                    <div className="text-center">
                       <div
                         style={{
-                          fontSize:
-                            "65px",
+                          fontSize: "65px",
                         }}
                       >
                         💬
@@ -1019,367 +778,249 @@ function AdminMessages() {
                       </h5>
 
                       <p className="text-muted">
-                        Select an intern
-                        from the left to
-                        start chatting.
+                        Select an intern from the left
+                        to start chatting.
                       </p>
-
                     </div>
-
                   </div>
-
-                ) : internMessages.length ===
-                  0 ? (
-
-                  <div
-                    className="h-100 d-flex justify-content-center align-items-center"
-                  >
-
-                    <div
-                      className="text-center"
-                    >
-
+                ) : internMessages.length === 0 ? (
+                  <div className="h-100 d-flex justify-content-center align-items-center">
+                    <div className="text-center">
                       <div
                         style={{
-                          fontSize:
-                            "55px",
+                          fontSize: "55px",
                         }}
                       >
                         💬
                       </div>
 
-                      <h5>
-                        No messages yet
-                      </h5>
+                      <h5>No messages yet</h5>
 
                       <p className="text-muted">
-                        Start a conversation
-                        with{" "}
-                        {
-                          selectedIntern.full_name
-                        }
+                        Start a conversation with{" "}
+                        {selectedIntern.full_name}
                       </p>
-
                     </div>
-
                   </div>
-
                 ) : (
+                  internMessages.map((msg) => {
+                    const isAdmin =
+                      msg.sender === "admin";
 
-                  internMessages.map(
-                    (msg) => {
-
-                      const isAdmin =
-                        msg.sender ===
-                        "admin";
-
-                      return (
-
+                    return (
+                      <div
+                        key={msg.message_id}
+                        className={`d-flex mb-2 ${
+                          isAdmin
+                            ? "justify-content-end"
+                            : "justify-content-start"
+                        }`}
+                      >
                         <div
-                          key={
-                            msg.message_id
-                          }
-                          className={`d-flex mb-2 ${
-                            isAdmin
-                              ? "justify-content-end"
-                              : "justify-content-start"
-                          }`}
+                          style={{
+                            maxWidth: "70%",
+                            minWidth: "80px",
+                            background: isAdmin
+                              ? "#d9fdd3"
+                              : "#ffffff",
+                            padding: "8px 10px",
+                            borderRadius: "10px",
+                            boxShadow:
+                              "0 1px 2px rgba(0,0,0,0.15)",
+                          }}
                         >
 
-                          <div
-                            style={{
-                              maxWidth:
-                                "70%",
-                              minWidth:
-                                "80px",
-                              background:
-                                isAdmin
-                                  ? "#d9fdd3"
-                                  : "#ffffff",
-                              padding:
-                                "8px 10px",
-                              borderRadius:
-                                "10px",
-                              boxShadow:
-                                "0 1px 2px rgba(0,0,0,0.15)",
-                            }}
-                          >
+                          {/* SENDER NAME */}
 
-                            {/* SENDER NAME */}
+                          {!isAdmin && (
+                            <div
+                              style={{
+                                color: "#075e54",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                marginBottom: "3px",
+                              }}
+                            >
+                              {msg.sender_name ||
+                                selectedIntern.full_name}
+                            </div>
+                          )}
 
-                            {!isAdmin && (
+                          {/* IMAGE */}
 
-                              <div
+                          {msg.file_url &&
+                            isImage(msg.file_name) && (
+                              <a
+                                href={`${API_URL}${msg.file_url}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <img
+                                  src={`${API_URL}${msg.file_url}`}
+                                  alt={
+                                    msg.file_name ||
+                                    "Image"
+                                  }
+                                  style={{
+                                    maxWidth: "280px",
+                                    maxHeight: "280px",
+                                    width: "100%",
+                                    objectFit: "cover",
+                                    borderRadius: "8px",
+                                    display: "block",
+                                    marginBottom:
+                                      msg.message
+                                        ? "7px"
+                                        : "0",
+                                  }}
+                                />
+                              </a>
+                            )}
+
+                          {/* FILE */}
+
+                          {msg.file_url &&
+                            !isImage(msg.file_name) && (
+                              <a
+                                href={`${API_URL}${msg.file_url}`}
+                                target="_blank"
+                                rel="noreferrer"
                                 style={{
-                                  color:
-                                    "#075e54",
-                                  fontSize:
-                                    "12px",
-                                  fontWeight:
-                                    "bold",
-                                  marginBottom:
-                                    "3px",
+                                  textDecoration: "none",
+                                  color: "#333",
                                 }}
                               >
-                                {msg.sender_name ||
-                                  selectedIntern.full_name}
-                              </div>
-
-                            )}
-
-                            {/* IMAGE */}
-
-                            {msg.file_url &&
-                              isImage(
-                                msg.file_name
-                              ) && (
-
-                                <a
-                                  href={`${API_URL}${msg.file_url}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-
-                                  <img
-                                    src={`${API_URL}${msg.file_url}`}
-                                    alt={
-                                      msg.file_name
-                                    }
-                                    style={{
-                                      maxWidth:
-                                        "280px",
-                                      maxHeight:
-                                        "280px",
-                                      width:
-                                        "100%",
-                                      objectFit:
-                                        "cover",
-                                      borderRadius:
-                                        "8px",
-                                      display:
-                                        "block",
-                                      marginBottom:
-                                        msg.message
-                                          ? "7px"
-                                          : "0",
-                                    }}
-                                  />
-
-                                </a>
-
-                            )}
-
-                            {/* FILE */}
-
-                            {msg.file_url &&
-                              !isImage(
-                                msg.file_name
-                              ) && (
-
-                                <a
-                                  href={`${API_URL}${msg.file_url}`}
-                                  target="_blank"
-                                  rel="noreferrer"
+                                <div
                                   style={{
-                                    textDecoration:
-                                      "none",
-                                    color:
-                                      "#333",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    padding: "9px",
+                                    background: "#f0f2f5",
+                                    borderRadius: "8px",
+                                    marginBottom:
+                                      msg.message
+                                        ? "7px"
+                                        : "0",
                                   }}
                                 >
+                                  <span
+                                    style={{
+                                      fontSize: "30px",
+                                    }}
+                                  >
+                                    {getFileIcon(
+                                      msg.file_name
+                                    )}
+                                  </span>
 
                                   <div
                                     style={{
-                                      display:
-                                        "flex",
-                                      alignItems:
-                                        "center",
-                                      padding:
-                                        "9px",
-                                      background:
-                                        "#f0f2f5",
-                                      borderRadius:
-                                        "8px",
-                                      marginBottom:
-                                        msg.message
-                                          ? "7px"
-                                          : "0",
+                                      marginLeft: "8px",
+                                      wordBreak:
+                                        "break-word",
                                     }}
                                   >
-
-                                    <span
+                                    <strong
                                       style={{
-                                        fontSize:
-                                          "30px",
+                                        fontSize: "13px",
                                       }}
                                     >
-                                      {getFileIcon(
-                                        msg.file_name
-                                      )}
-                                    </span>
+                                      {msg.file_name}
+                                    </strong>
 
-                                    <div
-                                      style={{
-                                        marginLeft:
-                                          "8px",
-                                        wordBreak:
-                                          "break-word",
-                                      }}
-                                    >
+                                    <br />
 
-                                      <strong
-                                        style={{
-                                          fontSize:
-                                            "13px",
-                                        }}
-                                      >
-                                        {
-                                          msg.file_name
-                                        }
-                                      </strong>
-
-                                      <br />
-
-                                      <small className="text-muted">
-                                        Click to
-                                        open
-                                      </small>
-
-                                    </div>
-
+                                    <small className="text-muted">
+                                      Click to open
+                                    </small>
                                   </div>
-
-                                </a>
-
+                                </div>
+                              </a>
                             )}
 
-                            {/* MESSAGE */}
+                          {/* MESSAGE */}
 
-                            {msg.message && (
-
-                              <div
-                                style={{
-                                  whiteSpace:
-                                    "pre-wrap",
-                                  wordBreak:
-                                    "break-word",
-                                  fontSize:
-                                    "14px",
-                                }}
-                              >
-                                {
-                                  msg.message
-                                }
-                              </div>
-
-                            )}
-
-                            {/* TIME + TICK */}
-
+                          {msg.message && (
                             <div
-                              className="d-flex justify-content-end align-items-center"
                               style={{
-                                marginTop:
-                                  "3px",
-                                gap: "4px",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                fontSize: "14px",
                               }}
                             >
-
-                              <small
-                                className="text-muted"
-                                style={{
-                                  fontSize:
-                                    "10px",
-                                }}
-                              >
-                                {formatTime(
-                                  msg.created_at
-                                )}
-                              </small>
-
-                              {/* ADMIN TICKS */}
-
-                              {isAdmin && (
-
-                                <span
-                                  style={{
-                                    fontSize:
-                                      "13px",
-                                    fontWeight:
-                                      "bold",
-
-                                    // IMPORTANT:
-                                    // Grey until intern
-                                    // reads message.
-                                    color:
-                                      msg.is_read
-                                        ? "#34B7F1"
-                                        : "#8696a0",
-                                  }}
-                                  title={
-                                    msg.is_read
-                                      ? "Seen"
-                                      : "Delivered"
-                                  }
-                                >
-                                  ✓✓
-                                </span>
-
-                              )}
-
+                              {msg.message}
                             </div>
+                          )}
 
+                          {/* TIME + TICK */}
+
+                          <div
+                            className="d-flex justify-content-end align-items-center"
+                            style={{
+                              marginTop: "3px",
+                              gap: "4px",
+                            }}
+                          >
+                            <small
+                              className="text-muted"
+                              style={{
+                                fontSize: "10px",
+                              }}
+                            >
+                              {formatTime(
+                                msg.created_at
+                              )}
+                            </small>
+
+                            {isAdmin && (
+                              <span
+                                style={{
+                                  fontSize: "13px",
+                                  fontWeight: "bold",
+                                  color: msg.is_read
+                                    ? "#34B7F1"
+                                    : "#8696a0",
+                                }}
+                                title={
+                                  msg.is_read
+                                    ? "Seen"
+                                    : "Delivered"
+                                }
+                              >
+                                ✓✓
+                              </span>
+                            )}
                           </div>
-
                         </div>
-
-                      );
-                    }
-                  )
-
+                      </div>
+                    );
+                  })
                 )}
 
-                <div
-                  ref={chatEndRef}
-                />
-
+                <div ref={chatEndRef} />
               </div>
 
-              {/* ================================================= */}
               {/* SELECTED FILE PREVIEW */}
-              {/* ================================================= */}
 
               {selectedFile && (
-
                 <div
                   style={{
-                    padding:
-                      "8px 12px",
-                    background:
-                      "#f0f2f5",
-                    borderTop:
-                      "1px solid #ddd",
+                    padding: "8px 12px",
+                    background: "#f0f2f5",
+                    borderTop: "1px solid #ddd",
                   }}
                 >
-
                   <div
                     className="d-flex justify-content-between align-items-center bg-white p-2"
                     style={{
-                      borderRadius:
-                        "8px",
+                      borderRadius: "8px",
                     }}
                   >
-
-                    <div
-                      className="d-flex align-items-center"
-                    >
-
+                    <div className="d-flex align-items-center">
                       <span
                         style={{
-                          fontSize:
-                            "25px",
-                          marginRight:
-                            "8px",
+                          fontSize: "25px",
+                          marginRight: "8px",
                         }}
                       >
                         {getFileIcon(
@@ -1388,61 +1029,44 @@ function AdminMessages() {
                       </span>
 
                       <div>
-
                         <strong
                           style={{
-                            fontSize:
-                              "13px",
+                            fontSize: "13px",
                           }}
                         >
-                          {
-                            selectedFile.name
-                          }
+                          {selectedFile.name}
                         </strong>
 
                         <br />
 
                         <small className="text-muted">
                           {(
-                            selectedFile.size /
-                            1024
+                            selectedFile.size / 1024
                           ).toFixed(1)}{" "}
                           KB
                         </small>
-
                       </div>
-
                     </div>
 
                     <button
                       className="btn btn-sm btn-light"
-                      onClick={
-                        removeSelectedFile
-                      }
+                      onClick={removeSelectedFile}
                     >
                       ✕
                     </button>
-
                   </div>
-
                 </div>
-
               )}
 
-              {/* ================================================= */}
               {/* MESSAGE INPUT */}
-              {/* ================================================= */}
 
               {selectedIntern && (
-
                 <div
                   style={{
-                    background:
-                      "#f0f2f5",
+                    background: "#f0f2f5",
                     padding: "10px",
                   }}
                 >
-
                   <div
                     className="d-flex align-items-center"
                     style={{
@@ -1467,9 +1091,7 @@ function AdminMessages() {
                       type="file"
                       hidden
                       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.csv"
-                      onChange={
-                        handleFileSelect
-                      }
+                      onChange={handleFileSelect}
                     />
 
                     {/* EMOJI */}
@@ -1478,8 +1100,7 @@ function AdminMessages() {
                       className="btn btn-light"
                       onClick={() =>
                         setReply(
-                          (prev) =>
-                            prev + " 😊"
+                          (prev) => prev + " 😊"
                         )
                       }
                       title="Emoji"
@@ -1495,23 +1116,16 @@ function AdminMessages() {
                       placeholder={`Message ${selectedIntern.full_name}...`}
                       value={reply}
                       onChange={(e) =>
-                        setReply(
-                          e.target.value
-                        )
+                        setReply(e.target.value)
                       }
                       onKeyDown={(e) => {
-
                         if (
-                          e.key ===
-                            "Enter" &&
+                          e.key === "Enter" &&
                           !e.shiftKey
                         ) {
-
                           e.preventDefault();
-
                           sendReply();
                         }
-
                       }}
                     />
 
@@ -1522,30 +1136,19 @@ function AdminMessages() {
                       style={{
                         background:
                           "rgb(2,26,77)",
-                        minWidth:
-                          "52px",
+                        minWidth: "52px",
                       }}
-                      onClick={
-                        sendReply
-                      }
+                      onClick={sendReply}
                     >
                       ➤
                     </button>
-
                   </div>
-
                 </div>
-
               )}
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </AdminLayout>
   );
 }
