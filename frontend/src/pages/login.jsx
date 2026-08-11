@@ -3,162 +3,129 @@ import axios from "axios";
 import logo from "../assets/midbrains_technologies_logo.jpg";
 
 function Login() {
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("intern");
   const [showPassword, setShowPassword] = useState(false);
-
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
-
     e.preventDefault();
 
+    setLoading(true);
 
     try {
-
-      const res = await axios.post(
-        "http://127.0.0.1:5000/login",
-        {
-          username,
-          password,
-          role
-        }
-      );
-
+      // Same Railway domain - no localhost required
+      const res = await axios.post("/login", {
+        username: username.trim(),
+        password,
+        role,
+      });
 
       console.log("LOGIN RESPONSE:", res.data);
 
-
-      if(res.data.success){
-
-
+      if (res.data.success) {
         alert("Login Successful");
-
 
         // Remove previous login data
         localStorage.removeItem("admin");
         localStorage.removeItem("intern");
 
-
-        if(role === "admin" && res.data.admin){
-
+        // ADMIN LOGIN
+        if (role === "admin" && res.data.admin) {
           localStorage.setItem(
             "admin",
             JSON.stringify(res.data.admin)
           );
 
-
-          window.location.href="/admin";
-
+          window.location.href = "/admin";
         }
 
-
-        else if(role === "intern" && res.data.intern){
-
-
+        // INTERN LOGIN
+        else if (role === "intern" && res.data.intern) {
           localStorage.setItem(
             "intern",
             JSON.stringify(res.data.intern)
           );
 
-
-          window.location.href="/intern";
-
+          window.location.href = "/intern";
         }
 
-
-        else{
-
-          alert("Invalid login response");
-
+        else {
+          alert("Invalid login response from server.");
         }
-
-
+      } else {
+        alert(res.data.message || "Invalid username or password.");
       }
 
-      else{
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
 
-        alert(res.data.message);
+      console.error(
+        "SERVER RESPONSE:",
+        err.response?.data
+      );
 
+      if (err.response) {
+        alert(
+          err.response.data?.message ||
+          err.response.data?.error ||
+          `Server error (${err.response.status})`
+        );
+      } else if (err.request) {
+        alert(
+          "Unable to connect to the server. Please check your internet connection."
+        );
+      } else {
+        alert("Something went wrong. Please try again.");
       }
 
-
+    } finally {
+      setLoading(false);
     }
-
-    catch(err){
-
-      console.log(
-        "ERROR:",
-        err.response?.data || err.message
-      );
-
-
-      alert(
-        err.response?.data?.message ||
-        "Server error"
-      );
-
-    }
-
   };
 
-
-
   return (
-
     <div
       className="d-flex justify-content-center align-items-center"
       style={{
-        minHeight:"100vh"
+        minHeight: "100vh",
       }}
     >
-
-
       <div
         className="card shadow-lg border-0"
         style={{
-          width:"450px",
-          borderRadius:"20px"
+          width: "450px",
+          maxWidth: "95%",
+          borderRadius: "20px",
         }}
       >
-
-
         <div className="card-body p-4">
 
-
+          {/* LOGO */}
           <div className="text-center mb-4">
-
-
             <img
               src={logo}
               alt="Midbrains Technologies"
               style={{
-                width:"280px"
+                width: "280px",
+                maxWidth: "100%",
               }}
             />
-
 
             <p className="text-muted mt-2">
               Login to continue
             </p>
-
-
           </div>
 
-
-
+          {/* LOGIN FORM */}
           <form onSubmit={handleLogin}>
 
-
-            {/* Username */}
-
+            {/* USERNAME */}
             <div className="mb-3">
-
               <label className="form-label fw-semibold">
                 Username
               </label>
-
 
               <input
                 type="text"
@@ -166,149 +133,106 @@ function Login() {
                 placeholder="Enter Username"
                 value={username}
                 autoComplete="username"
-                onChange={(e)=>
+                onChange={(e) =>
                   setUsername(e.target.value)
                 }
                 required
               />
-
             </div>
 
-
-
-            {/* Password */}
-
+            {/* PASSWORD */}
             <div className="mb-3">
-
               <label className="form-label fw-semibold">
                 Password
               </label>
 
-
               <div className="input-group">
-
 
                 <input
                   type={
                     showPassword
-                    ? "text"
-                    : "password"
+                      ? "text"
+                      : "password"
                   }
                   className="form-control form-control-lg"
                   placeholder="Enter Password"
                   value={password}
                   autoComplete="current-password"
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setPassword(e.target.value)
                   }
                   required
                 />
 
-
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
-                  onClick={()=>
+                  onClick={() =>
                     setShowPassword(!showPassword)
                   }
                 >
-
                   <i
                     className={
                       showPassword
-                      ? "bi bi-eye-slash-fill"
-                      : "bi bi-eye-fill"
+                        ? "bi bi-eye-slash-fill"
+                        : "bi bi-eye-fill"
                     }
                   ></i>
-
-
                 </button>
 
-
               </div>
-
-
             </div>
 
-
-
-
-            {/* Role */}
-
+            {/* ROLE */}
             <div className="mb-4">
-
-
               <label className="form-label fw-semibold">
                 Login As
               </label>
 
-
               <select
                 className="form-select form-select-lg"
                 value={role}
-                onChange={(e)=>
+                onChange={(e) =>
                   setRole(e.target.value)
                 }
               >
-
                 <option value="intern">
                   Intern
                 </option>
 
-
                 <option value="admin">
                   Admin
                 </option>
-
-
               </select>
-
-
             </div>
 
-
-
-
+            {/* LOGIN BUTTON */}
             <button
               type="submit"
               className="btn w-100 py-3 fw-bold"
+              disabled={loading}
               style={{
-                backgroundColor:"rgb(2,26,77)",
-                color:"white",
-                borderRadius:"12px"
+                backgroundColor: "rgb(2,26,77)",
+                color: "white",
+                borderRadius: "12px",
               }}
             >
-
-              Login
-
+              {loading ? "Logging in..." : "Login"}
             </button>
-
-
 
           </form>
 
-
-
+          {/* FOOTER */}
           <div className="text-center mt-4">
-
             <small className="text-muted">
               © 2026 Midbrains Technologies
             </small>
-
           </div>
 
-
         </div>
-
-
       </div>
-
-
     </div>
-
   );
-
 }
-
 
 export default Login;
