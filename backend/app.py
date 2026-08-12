@@ -13,28 +13,14 @@ from db import get_connection
 
 import os
 
-
-# ==========================================
-# PATHS
-# ==========================================
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# React production build
-FRONTEND_DIST = os.path.join(BASE_DIR, "..", "frontend", "dist")
-
-# Uploaded files
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-
-
-# ==========================================
-# FLASK APP
-# ==========================================
-
 app = Flask(__name__)
-
 CORS(app)
 
+# ==========================================
+# UPLOAD FOLDER
+# ==========================================
+
+UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -53,26 +39,47 @@ app.register_blueprint(messages_bp)
 
 
 # ==========================================
-# SERVE REACT FRONTEND
+# REACT FRONTEND
 # ==========================================
 
-@app.route("/")
-def home():
-    return send_from_directory(FRONTEND_DIST, "index.html")
+FRONTEND_FOLDER = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "../frontend/dist"
+    )
+)
 
 
+@app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_react(path):
 
     # If requested file exists, serve it
-    requested_file = os.path.join(FRONTEND_DIST, path)
+    file_path = os.path.join(FRONTEND_FOLDER, path)
 
-    if os.path.isfile(requested_file):
-        return send_from_directory(FRONTEND_DIST, path)
+    if path and os.path.exists(file_path):
+        return send_from_directory(
+            FRONTEND_FOLDER,
+            path
+        )
 
     # Otherwise send React index.html
-    # This is important for React Router
-    return send_from_directory(FRONTEND_DIST, "index.html")
+    return send_from_directory(
+        FRONTEND_FOLDER,
+        "index.html"
+    )
+
+
+# ==========================================
+# TEST API
+# ==========================================
+
+@app.route("/api")
+def api_home():
+
+    return {
+        "message": "Intern Management API Running"
+    }
 
 
 # ==========================================
@@ -104,7 +111,7 @@ def test_db():
         return {
             "status": "Failed",
             "error": str(e)
-        }, 500
+        }
 
 
 # ==========================================
@@ -121,10 +128,13 @@ def uploaded_file(filename):
 
 
 # ==========================================
-# UPLOAD PROFILE IMAGE
+# PROFILE IMAGE UPLOAD
 # ==========================================
 
-@app.route("/upload-profile/<int:intern_id>", methods=["POST"])
+@app.route(
+    "/upload-profile/<int:intern_id>",
+    methods=["POST"]
+)
 def upload_profile(intern_id):
 
     try:
@@ -136,7 +146,9 @@ def upload_profile(intern_id):
                 "message": "No file selected"
             }), 400
 
+
         file = request.files["profile_image"]
+
 
         if file.filename == "":
 
@@ -145,22 +157,31 @@ def upload_profile(intern_id):
                 "message": "Empty filename"
             }), 400
 
-        filename = secure_filename(file.filename)
 
-        # Create unique filename
+        filename = secure_filename(
+            file.filename
+        )
+
+
+        # Unique filename
         filename = f"{intern_id}_{filename}"
+
 
         filepath = os.path.join(
             app.config["UPLOAD_FOLDER"],
             filename
         )
 
+
         file.save(filepath)
+
 
         image_path = f"uploads/{filename}"
 
+
         conn = get_connection()
         cursor = conn.cursor()
+
 
         cursor.execute(
             """
@@ -168,35 +189,55 @@ def upload_profile(intern_id):
             SET profile_image = %s
             WHERE intern_id = %s
             """,
-            (image_path, intern_id)
+            (
+                image_path,
+                intern_id
+            )
         )
+
 
         conn.commit()
 
         cursor.close()
         conn.close()
 
+
         return jsonify({
+
             "success": True,
-            "message": "Profile image uploaded successfully",
-            "image_path": image_path
+
+            "message":
+            "Profile image uploaded successfully",
+
+            "image_path":
+            image_path
+
         })
+
 
     except Exception as e:
 
         return jsonify({
+
             "success": False,
+
             "error": str(e)
+
         }), 500
 
 
 # ==========================================
-# RUN SERVER
+# START SERVER
 # ==========================================
 
 if __name__ == "__main__":
 
-    port = int(os.environ.get("PORT", 5000))
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
 
     app.run(
         host="0.0.0.0",

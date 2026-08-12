@@ -2,6 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import logo from "../assets/midbrains_technologies_logo.jpg";
 
+const API_URL = "https://project-intern-production.up.railway.app";
+
 function InternSignup() {
   const [formData, setFormData] = useState({
     full_name: "",
@@ -17,48 +19,83 @@ function InternSignup() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    if (e.target.name === "profile_image") {
-      setFormData({
-        ...formData,
-        profile_image: e.target.files[0],
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value,
-      });
-    }
+    const { name, value, files } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "profile_image" ? files[0] : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = new FormData();
-
-    Object.keys(formData).forEach((key) => {
-      data.append(key, formData[key]);
-    });
+    setLoading(true);
 
     try {
+      const data = new FormData();
+
+      data.append("full_name", formData.full_name);
+      data.append("email", formData.email);
+      data.append("password", formData.password);
+      data.append("phone", formData.phone);
+      data.append("age", formData.age);
+      data.append("gender", formData.gender);
+      data.append("dob", formData.dob);
+      data.append("department", formData.department);
+      data.append("address", formData.address);
+
+      if (formData.profile_image) {
+        data.append("profile_image", formData.profile_image);
+      }
+
+      console.log("Sending signup request...");
+      console.log("Backend:", API_URL);
+
+      // IMPORTANT:
+      // Do NOT manually set Content-Type.
+      // Browser/Axios automatically creates the multipart boundary.
       const response = await axios.post(
-        "http://127.0.0.1:5000/signup",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        `${API_URL}/signup`,
+        data
       );
 
-      alert("Registration Successful");
+      console.log("SIGNUP RESPONSE:", response.data);
 
-      window.location.href = "/login";
+      if (response.data.success) {
+        alert("Registration Successful!");
 
-    } catch (err) {
-      console.log(err);
-      alert("Registration Failed");
+        window.location.href = "/login";
+      } else {
+        alert(
+          response.data.message ||
+          "Registration Failed"
+        );
+      }
+
+    } catch (error) {
+      console.error("SIGNUP ERROR:", error);
+
+      console.error(
+        "STATUS:",
+        error.response?.status
+      );
+
+      console.error(
+        "SERVER RESPONSE:",
+        error.response?.data
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Registration Failed. Please try again."
+      );
+
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,19 +110,22 @@ function InternSignup() {
         className="card border-0 shadow-lg"
         style={{
           width: "700px",
+          maxWidth: "95%",
           borderRadius: "20px",
         }}
       >
-        <div className="card-body p-3">
+        <div className="card-body p-4">
 
           {/* Logo */}
 
           <div className="text-center mb-3">
+
             <img
               src={logo}
               alt="Midbrains Technologies"
               style={{
                 width: "280px",
+                maxWidth: "100%",
                 height: "auto",
                 display: "block",
                 margin: "0 auto",
@@ -93,7 +133,7 @@ function InternSignup() {
             />
 
             <p
-              className="text-muted mt-1"
+              className="text-muted mt-2"
               style={{
                 fontSize: "16px",
                 fontWeight: "500",
@@ -101,71 +141,123 @@ function InternSignup() {
             >
               Create your intern account
             </p>
+
           </div>
+
 
           <form onSubmit={handleSubmit}>
 
-            <div className="mb-2">
-              <label className="form-label fw-semibold">
+            {/* Profile Photo */}
+
+            <div className="mb-3">
+
+              <label
+                htmlFor="profile_image"
+                className="form-label fw-semibold"
+              >
                 Profile Photo
               </label>
 
               <input
+                id="profile_image"
                 type="file"
                 name="profile_image"
-                className="form-control form-control"
-                style={{ borderRadius: "12px" }}
+                className="form-control"
+                accept="image/*"
+                style={{
+                  borderRadius: "12px",
+                }}
                 onChange={handleChange}
               />
+
             </div>
 
-            <div className="mb-2">
-              <label className="form-label fw-semibold">
+
+            {/* Full Name */}
+
+            <div className="mb-3">
+
+              <label
+                htmlFor="full_name"
+                className="form-label fw-semibold"
+              >
                 Full Name
               </label>
 
               <input
+                id="full_name"
                 type="text"
                 name="full_name"
-                className="form-control form-control"
-                style={{ borderRadius: "12px" }}
+                className="form-control"
+                placeholder="Enter full name"
+                autoComplete="name"
+                style={{
+                  borderRadius: "12px",
+                }}
                 value={formData.full_name}
                 onChange={handleChange}
                 required
               />
+
             </div>
 
+
+            {/* Email + Password */}
+
             <div className="row">
-              <div className="col-md-6 mb-2">
-                <label className="form-label fw-semibold">
+
+              <div className="col-md-6 mb-3">
+
+                <label
+                  htmlFor="email"
+                  className="form-label fw-semibold"
+                >
                   Email
                 </label>
 
                 <input
+                  id="email"
                   type="email"
                   name="email"
-                  className="form-control form-control"
-                  style={{ borderRadius: "12px" }}
+                  className="form-control"
+                  placeholder="Enter email"
+                  autoComplete="email"
+                  style={{
+                    borderRadius: "12px",
+                  }}
                   value={formData.email}
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
+
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
+
+                <label
+                  htmlFor="password"
+                  className="form-label fw-semibold"
+                >
                   Password
                 </label>
 
                 <div className="input-group">
+
                   <input
+                    id="password"
                     type={
                       showPassword
                         ? "text"
                         : "password"
                     }
                     name="password"
-                    className="form-control form-control"
+                    className="form-control"
+                    placeholder="Enter password"
+                    autoComplete="new-password"
+                    style={{
+                      borderRadius: "12px 0 0 12px",
+                    }}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -188,113 +280,202 @@ function InternSignup() {
                       }
                     ></i>
                   </button>
+
                 </div>
+
               </div>
+
             </div>
 
+
+            {/* Phone + Age */}
+
             <div className="row">
+
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
+
+                <label
+                  htmlFor="phone"
+                  className="form-label fw-semibold"
+                >
                   Phone
                 </label>
 
                 <input
-                  type="text"
+                  id="phone"
+                  type="tel"
                   name="phone"
-                  className="form-control form-control"
-                  style={{ borderRadius: "12px" }}
+                  className="form-control"
+                  placeholder="Enter phone number"
+                  autoComplete="tel"
+                  style={{
+                    borderRadius: "12px",
+                  }}
                   value={formData.phone}
                   onChange={handleChange}
                 />
+
               </div>
 
+
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
+
+                <label
+                  htmlFor="age"
+                  className="form-label fw-semibold"
+                >
                   Age
                 </label>
 
                 <input
+                  id="age"
                   type="number"
                   name="age"
-                  className="form-control form-control"
-                  style={{ borderRadius: "12px" }}
+                  className="form-control"
+                  placeholder="Enter age"
+                  style={{
+                    borderRadius: "12px",
+                  }}
                   value={formData.age}
                   onChange={handleChange}
                 />
+
               </div>
+
             </div>
 
+
+            {/* Gender + DOB */}
+
             <div className="row">
+
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
+
+                <label
+                  htmlFor="gender"
+                  className="form-label fw-semibold"
+                >
                   Gender
                 </label>
 
                 <select
+                  id="gender"
                   name="gender"
-                  className="form-select form-select"
-                  style={{ borderRadius: "12px" }}
+                  className="form-select"
+                  style={{
+                    borderRadius: "12px",
+                  }}
                   value={formData.gender}
                   onChange={handleChange}
                 >
+
                   <option value="">
                     Select Gender
                   </option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
+
+                  <option value="Male">
+                    Male
+                  </option>
+
+                  <option value="Female">
+                    Female
+                  </option>
+
+                  <option value="Other">
+                    Other
+                  </option>
+
                 </select>
+
               </div>
 
+
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
+
+                <label
+                  htmlFor="dob"
+                  className="form-label fw-semibold"
+                >
                   Date of Birth
                 </label>
 
                 <input
+                  id="dob"
                   type="date"
                   name="dob"
-                  className="form-control form-control"
-                  style={{ borderRadius: "12px" }}
+                  className="form-control"
+                  style={{
+                    borderRadius: "12px",
+                  }}
                   value={formData.dob}
                   onChange={handleChange}
                 />
+
               </div>
+
             </div>
 
+
+            {/* Department */}
+
             <div className="mb-3">
-              <label className="form-label fw-semibold">
+
+              <label
+                htmlFor="department"
+                className="form-label fw-semibold"
+              >
                 Department
               </label>
 
               <input
+                id="department"
                 type="text"
                 name="department"
-                className="form-control form-control"
-                style={{ borderRadius: "12px" }}
+                className="form-control"
+                placeholder="Enter department"
+                style={{
+                  borderRadius: "12px",
+                }}
                 value={formData.department}
                 onChange={handleChange}
               />
+
             </div>
 
+
+            {/* Address */}
+
             <div className="mb-3">
-              <label className="form-label fw-semibold">
+
+              <label
+                htmlFor="address"
+                className="form-label fw-semibold"
+              >
                 Address
               </label>
 
               <textarea
+                id="address"
                 rows="3"
                 name="address"
                 className="form-control"
-                style={{ borderRadius: "12px" }}
+                placeholder="Enter address"
+                style={{
+                  borderRadius: "12px",
+                }}
                 value={formData.address}
                 onChange={handleChange}
               />
+
             </div>
+
+
+            {/* Register Button */}
 
             <button
               type="submit"
               className="btn btn-primary w-100 py-2 fw-bold"
+              disabled={loading}
               style={{
                 borderRadius: "12px",
                 fontSize: "17px",
@@ -302,27 +483,43 @@ function InternSignup() {
                 borderColor: "rgb(2, 26, 77)",
               }}
             >
-              Register
+
+              {loading
+                ? "Registering..."
+                : "Register"}
+
             </button>
 
-            {/* Already have an account */}
+
+            {/* Login */}
+
             <div className="text-center mt-3">
-              <span className="text-muted">Already have an account? </span>
+
+              <span className="text-muted">
+                Already have an account?{" "}
+              </span>
 
               <button
                 type="button"
                 className="btn btn-link p-0 text-decoration-none fw-bold"
-                onClick={() => (window.location.href = "/login")}
+                onClick={() =>
+                  (window.location.href = "/login")
+                }
               >
                 Login
               </button>
+
             </div>
+
           </form>
 
+
           <div className="text-center mt-4">
+
             <small className="text-muted">
               © 2026 Midbrains Technologies
             </small>
+
           </div>
 
         </div>
