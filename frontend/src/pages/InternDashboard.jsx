@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import InternSidebar from "../components/InternSidebar";
 import InternNavbar from "../components/InternNavbar";
+import api, { API_URL } from "../api";
 
 function InternDashboard() {
   const intern = JSON.parse(localStorage.getItem("intern"));
@@ -39,27 +39,33 @@ function InternDashboard() {
     hours_worked: "",
   });
 
+  // ---------------- FETCH WORK LOGS ----------------
   const fetchLogs = async () => {
+    if (!intern?.intern_id) return;
+
     try {
-      const res = await axios.get(
-        `http://127.0.0.1:5000/worklogs/${intern.intern_id}`
+      const res = await api.get(
+        `/worklogs/${intern.intern_id}`
       );
 
       setLogs(res.data.data || []);
     } catch (e) {
-      console.log(e);
+      console.error("FETCH LOGS ERROR:", e);
     }
   };
 
+  // ---------------- FETCH SUMMARY ----------------
   const fetchSummary = async () => {
+    if (!intern?.intern_id) return;
+
     try {
-      const res = await axios.get(
-        `http://127.0.0.1:5000/intern-summary/${intern.intern_id}`
+      const res = await api.get(
+        `/intern-summary/${intern.intern_id}`
       );
 
       setStats(res.data);
     } catch (e) {
-      console.log(e);
+      console.error("FETCH SUMMARY ERROR:", e);
     }
   };
 
@@ -70,6 +76,7 @@ function InternDashboard() {
     }
   }, []);
 
+  // ---------------- HANDLE INPUT ----------------
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -79,61 +86,96 @@ function InternDashboard() {
     });
   };
 
+  // ---------------- ADD WORK LOG ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const fd = new FormData();
+    try {
+      const fd = new FormData();
 
-    Object.keys(form).forEach((k) => {
-      if (form[k] != null) {
-        fd.append(k, form[k]);
-      }
-    });
+      Object.keys(form).forEach((key) => {
+        if (form[key] != null) {
+          fd.append(key, form[key]);
+        }
+      });
 
-    await axios.post(
-      "http://127.0.0.1:5000/worklog",
-      fd,
-      {
+      await api.post("/worklog", fd, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
-    );
+      });
 
-    fetchLogs();
-    fetchSummary();
+      alert("Work log submitted successfully!");
 
-    setForm({
-      intern_id: intern.intern_id,
-      work_date: "",
-      task_title: "",
-      description: "",
-      hours_worked: "",
-      file: null,
-    });
+      await fetchLogs();
+      await fetchSummary();
+
+      setForm({
+        intern_id: intern.intern_id,
+        work_date: "",
+        task_title: "",
+        description: "",
+        hours_worked: "",
+        file: null,
+      });
+    } catch (error) {
+      console.error("SUBMIT WORK LOG ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to submit work log"
+      );
+    }
   };
 
+  // ---------------- DELETE WORK LOG ----------------
   const deleteLog = async (id) => {
-    await axios.delete(
-      `http://127.0.0.1:5000/worklog/${id}`
-    );
+    if (!window.confirm("Are you sure you want to delete this work log?")) {
+      return;
+    }
 
-    fetchLogs();
-    fetchSummary();
+    try {
+      await api.delete(`/worklog/${id}`);
+
+      alert("Work log deleted successfully!");
+
+      await fetchLogs();
+      await fetchSummary();
+    } catch (error) {
+      console.error("DELETE LOG ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to delete work log"
+      );
+    }
   };
 
+  // ---------------- UPDATE WORK LOG ----------------
   const updateLog = async () => {
-    await axios.put(
-      `http://127.0.0.1:5000/worklog/${editingId}`,
-      editForm
-    );
+    try {
+      await api.put(
+        `/worklog/${editingId}`,
+        editForm
+      );
 
-    setEditingId(null);
+      alert("Work log updated successfully!");
 
-    fetchLogs();
-    fetchSummary();
+      setEditingId(null);
+
+      await fetchLogs();
+      await fetchSummary();
+    } catch (error) {
+      console.error("UPDATE LOG ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to update work log"
+      );
+    }
   };
 
+  // ---------------- LOGOUT ----------------
   const logout = () => {
     localStorage.removeItem("intern");
     window.location.href = "/";
@@ -147,16 +189,17 @@ function InternDashboard() {
         style={{
           flex: 1,
           background: "#F8FAFC",
-          minHeight: "100vh"
+          minHeight: "100vh",
         }}
       >
         <InternNavbar />
 
         <div className="p-4"></div>
+
         <div className="container-fluid bg-light min-vh-100 p-4">
 
+          {/* HEADER */}
           <div className="d-flex justify-content-between align-items-center mb-4">
-
             <div>
               <h2 className="fw-bold">
                 Welcome, {intern?.full_name}
@@ -173,13 +216,13 @@ function InternDashboard() {
             >
               Logout
             </button>
-
           </div>
 
+          {/* STATISTICS */}
           <div className="row mb-4">
 
+            {/* TOTAL */}
             <div className="col-lg-3 col-md-6 mb-3">
-
               <div
                 className="card border-0 shadow-lg text-white"
                 style={{
@@ -191,60 +234,41 @@ function InternDashboard() {
                   <h2>{stats.totalLogs}</h2>
                 </div>
               </div>
-
             </div>
 
+            {/* APPROVED */}
             <div className="col-lg-3 col-md-6 mb-3">
-
               <div className="card border-0 shadow-lg bg-success text-white">
-
                 <div className="card-body">
-
                   <h6>Approved</h6>
-
                   <h2>{stats.approved}</h2>
-
                 </div>
-
               </div>
-
             </div>
 
+            {/* PENDING */}
             <div className="col-lg-3 col-md-6 mb-3">
-
               <div className="card border-0 shadow-lg bg-warning">
-
                 <div className="card-body">
-
                   <h6>Pending</h6>
-
                   <h2>{stats.pending}</h2>
-
                 </div>
-
               </div>
-
             </div>
 
+            {/* REJECTED */}
             <div className="col-lg-3 col-md-6 mb-3">
-
               <div className="card border-0 shadow-lg bg-danger text-white">
-
                 <div className="card-body">
-
                   <h6>Rejected</h6>
-
                   <h2>{stats.rejected}</h2>
-
                 </div>
-
               </div>
-
             </div>
 
           </div>
-          {/* Add Work Log */}
 
+          {/* ADD WORK LOG */}
           <div className="card border-0 shadow-lg mb-4">
 
             <div
@@ -253,7 +277,9 @@ function InternDashboard() {
                 backgroundColor: "rgb(2,26,77)",
               }}
             >
-              <h4 className="mb-0">Add Daily Work Log</h4>
+              <h4 className="mb-0">
+                Add Daily Work Log
+              </h4>
             </div>
 
             <div className="card-body">
@@ -262,9 +288,11 @@ function InternDashboard() {
 
                 <div className="row">
 
+                  {/* DATE */}
                   <div className="col-md-6 mb-3">
-
-                    <label className="form-label">Work Date</label>
+                    <label className="form-label">
+                      Work Date
+                    </label>
 
                     <input
                       type="date"
@@ -274,12 +302,13 @@ function InternDashboard() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
 
+                  {/* HOURS */}
                   <div className="col-md-6 mb-3">
-
-                    <label className="form-label">Hours Worked</label>
+                    <label className="form-label">
+                      Hours Worked
+                    </label>
 
                     <input
                       type="number"
@@ -290,14 +319,15 @@ function InternDashboard() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
 
                 </div>
 
+                {/* TASK TITLE */}
                 <div className="mb-3">
-
-                  <label className="form-label">Task Title</label>
+                  <label className="form-label">
+                    Task Title
+                  </label>
 
                   <input
                     type="text"
@@ -308,12 +338,13 @@ function InternDashboard() {
                     onChange={handleChange}
                     required
                   />
-
                 </div>
 
+                {/* DESCRIPTION */}
                 <div className="mb-3">
-
-                  <label className="form-label">Description</label>
+                  <label className="form-label">
+                    Description
+                  </label>
 
                   <textarea
                     name="description"
@@ -324,12 +355,13 @@ function InternDashboard() {
                     onChange={handleChange}
                     required
                   />
-
                 </div>
- 
-                <div className="mb-3">
 
-                  <label className="form-label">Upload File</label>
+                {/* FILE */}
+                <div className="mb-3">
+                  <label className="form-label">
+                    Upload File
+                  </label>
 
                   <input
                     type="file"
@@ -341,7 +373,6 @@ function InternDashboard() {
                       })
                     }
                   />
-
                 </div>
 
                 <button
@@ -354,17 +385,16 @@ function InternDashboard() {
               </form>
 
             </div>
-
           </div>
 
-          {/* Edit Work Log */}
-
+          {/* EDIT WORK LOG */}
           {editingId && (
-
             <div className="card border-0 shadow-lg mb-4">
 
               <div className="card-header bg-warning">
-                <h5 className="mb-0">Edit Work Log</h5>
+                <h5 className="mb-0">
+                  Edit Work Log
+                </h5>
               </div>
 
               <div className="card-body">
@@ -432,21 +462,16 @@ function InternDashboard() {
                 </button>
 
               </div>
-
             </div>
-
           )}
 
-          {/* Work Log Table */}
-
+          {/* WORK LOG TABLE */}
           <div className="card border-0 shadow-lg">
 
             <div className="card-header bg-dark text-white">
-
               <h4 className="mb-0">
                 My Work Logs
               </h4>
-
             </div>
 
             <div className="card-body">
@@ -456,18 +481,14 @@ function InternDashboard() {
                 <table className="table table-hover align-middle">
 
                   <thead className="table-light">
-
                     <tr>
-
                       <th>Date</th>
                       <th>Task</th>
                       <th>Hours</th>
                       <th>Status</th>
                       <th>File</th>
                       <th>Actions</th>
-
                     </tr>
-
                   </thead>
 
                   <tbody>
@@ -478,33 +499,38 @@ function InternDashboard() {
 
                         <tr key={log.log_id}>
 
-                          <td>{log.work_date}</td>
-
-                          <td>{log.task_title}</td>
-
-                          <td>{log.hours_worked}</td>
-
                           <td>
-
-                            <span
-                              className={`badge ${log.status === "Approved"
-                                ? "bg-success"
-                                : log.status === "Rejected"
-                                  ? "bg-danger"
-                                  : "bg-warning text-dark"
-                                }`}
-                            >
-                              {log.status}
-                            </span>
-
+                            {log.work_date}
                           </td>
 
                           <td>
+                            {log.task_title}
+                          </td>
 
+                          <td>
+                            {log.hours_worked}
+                          </td>
+
+                          <td>
+                            <span
+                              className={`badge ${
+                                log.status === "Approved"
+                                  ? "bg-success"
+                                  : log.status === "Rejected"
+                                  ? "bg-danger"
+                                  : "bg-warning text-dark"
+                              }`}
+                            >
+                              {log.status}
+                            </span>
+                          </td>
+
+                          {/* FILE */}
+                          <td>
                             {log.file_name ? (
 
                               <a
-                                href={`http://127.0.0.1:5000/uploads/${log.file_name}`}
+                                href={`${API_URL}/uploads/${log.file_name}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="btn btn-outline-info btn-sm"
@@ -519,9 +545,9 @@ function InternDashboard() {
                               </span>
 
                             )}
-
                           </td>
 
+                          {/* ACTIONS */}
                           <td>
 
                             {log.status === "Pending" ? (
@@ -535,8 +561,18 @@ function InternDashboard() {
                                     setEditingId(log.log_id);
 
                                     setEditForm({
-                                      ...log,
-                                      work_date: String(log.work_date).split("T")[0],
+                                      work_date: String(
+                                        log.work_date
+                                      ).split("T")[0],
+
+                                      task_title:
+                                        log.task_title,
+
+                                      description:
+                                        log.description,
+
+                                      hours_worked:
+                                        log.hours_worked,
                                     });
 
                                   }}
@@ -595,9 +631,10 @@ function InternDashboard() {
           </div>
 
         </div>
-      </div>
-    </div>
 
+      </div>
+
+    </div>
   );
 }
 

@@ -1,60 +1,84 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AdminLayout from "../layouts/AdminLayout";
-
+import api from "../api";
 
 function LeaveAdmin() {
-
   const [leaves, setLeaves] = useState([]);
 
+  // ---------------- FETCH LEAVES ----------------
   const fetchLeaves = async () => {
-
     try {
+      const res = await api.get("/leave");
 
-      const res = await axios.get(
-        "http://127.0.0.1:5000/leave"
-      );
-
-      setLeaves(res.data.data);
-
+      setLeaves(res.data.data || []);
     } catch (err) {
+      console.error("FETCH LEAVES ERROR:", err);
 
-      console.log(err);
-
+      alert(
+        err.response?.data?.message ||
+          "Unable to load leave requests"
+      );
     }
-
   };
 
   useEffect(() => {
-
     fetchLeaves();
-
   }, []);
+
+  // ---------------- APPROVE LEAVE ----------------
   const approveLeave = async (id) => {
-
     try {
-
-      const res = await axios.put(
-        `http://127.0.0.1:5000/leave/approve/${id}`
+      const res = await api.put(
+        `/leave/approve/${id}`
       );
 
-      alert(res.data.message);
+      alert(
+        res.data.message ||
+          "Leave approved successfully!"
+      );
 
       fetchLeaves();
-
     } catch (err) {
+      console.error("APPROVE LEAVE ERROR:", err);
 
-      console.log(err);
-
+      alert(
+        err.response?.data?.message ||
+          "Unable to approve leave"
+      );
     }
+  };
 
+  // ---------------- REJECT LEAVE ----------------
+  const rejectLeave = async (id) => {
+    try {
+      const res = await api.put(
+        `/leave/reject/${id}`
+      );
+
+      alert(
+        res.data.message ||
+          "Leave rejected successfully!"
+      );
+
+      fetchLeaves();
+    } catch (err) {
+      console.error("REJECT LEAVE ERROR:", err);
+
+      alert(
+        err.response?.data?.message ||
+          "Unable to reject leave"
+      );
+    }
   };
 
   return (
     <AdminLayout>
+
       <div className="container mt-4">
 
+        {/* HEADER */}
         <div className="d-flex justify-content-between align-items-center mb-4">
+
           <h2>Leave Requests</h2>
 
           <button
@@ -64,12 +88,16 @@ function LeaveAdmin() {
               color: "white",
               border: "none",
             }}
-            onClick={() => window.location.href = "/admin"}
+            onClick={() =>
+              (window.location.href = "/admin")
+            }
           >
             Back to Dashboard
           </button>
+
         </div>
 
+        {/* LEAVE CARD */}
         <div className="card shadow">
 
           <div
@@ -78,124 +106,161 @@ function LeaveAdmin() {
               backgroundColor: "rgb(2,26,77)",
             }}
           >
-            <h4 className="mb-0">All Leave Requests</h4>
+            <h4 className="mb-0">
+              All Leave Requests
+            </h4>
           </div>
 
           <div className="card-body">
 
-            <table className="table table-bordered table-hover">
+            <div className="table-responsive">
 
-              <thead className="table-dark">
+              <table className="table table-bordered table-hover">
 
-                <tr>
-                  <th>Intern</th>
-                  <th>Department</th>
-                  <th>From Date</th>
-                  <th>To Date</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
+                <thead className="table-dark">
 
-              </thead>
+                  <tr>
+                    <th>Intern</th>
+                    <th>Department</th>
+                    <th>From Date</th>
+                    <th>To Date</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
 
-              <tbody>
+                </thead>
 
-                {leaves.length > 0 ? (
+                <tbody>
 
-                  leaves.map((leave) => (
+                  {leaves.length > 0 ? (
 
-                    <tr key={leave.leave_id}>
+                    leaves.map((leave) => (
 
-                      <td>{leave.full_name}</td>
+                      <tr key={leave.leave_id}>
 
-                      <td>{leave.department}</td>
+                        {/* INTERN */}
+                        <td>
+                          {leave.full_name}
+                        </td>
 
-                      <td>{leave.from_date}</td>
+                        {/* DEPARTMENT */}
+                        <td>
+                          {leave.department}
+                        </td>
 
-                      <td>{leave.to_date}</td>
+                        {/* FROM DATE */}
+                        <td>
+                          {leave.from_date}
+                        </td>
 
-                      <td>{leave.reason}</td>
+                        {/* TO DATE */}
+                        <td>
+                          {leave.to_date}
+                        </td>
 
-                      <td>
+                        {/* REASON */}
+                        <td>
+                          {leave.reason}
+                        </td>
 
-                        {leave.status === "Approved" ? (
+                        {/* STATUS */}
+                        <td>
 
-                          <span className="badge bg-success">
-                            Approved
-                          </span>
+                          {leave.status === "Approved" ? (
 
-                        ) : leave.status === "Rejected" ? (
+                            <span className="badge bg-success">
+                              Approved
+                            </span>
 
-                          <span className="badge bg-danger">
-                            Rejected
-                          </span>
+                          ) : leave.status === "Rejected" ? (
 
-                        ) : (
+                            <span className="badge bg-danger">
+                              Rejected
+                            </span>
 
-                          <span className="badge bg-warning text-dark">
-                            Pending
-                          </span>
+                          ) : (
 
-                        )}
+                            <span className="badge bg-warning text-dark">
+                              Pending
+                            </span>
 
-                      </td>
+                          )}
 
-                      <td>
+                        </td>
 
-                        {leave.status === "Pending" ? (
+                        {/* ACTIONS */}
+                        <td>
 
-                          <>
-                            <button
-                              className="btn btn-success btn-sm me-2"
-                              onClick={() => approveLeave(leave.leave_id)}
-                            >
-                              Approve
-                            </button>
+                          {leave.status === "Pending" ? (
 
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => rejectLeave(leave.leave_id)}
-                            >
-                              Reject
-                            </button>
-                          </>
+                            <>
 
-                        ) : (
+                              <button
+                                className="btn btn-success btn-sm me-2"
+                                onClick={() =>
+                                  approveLeave(
+                                    leave.leave_id
+                                  )
+                                }
+                              >
+                                Approve
+                              </button>
 
-                          <span className="text-muted">
-                            Completed
-                          </span>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() =>
+                                  rejectLeave(
+                                    leave.leave_id
+                                  )
+                                }
+                              >
+                                Reject
+                              </button>
 
-                        )}
+                            </>
 
+                          ) : (
+
+                            <span className="text-muted">
+                              Completed
+                            </span>
+
+                          )}
+
+                        </td>
+
+                      </tr>
+
+                    ))
+
+                  ) : (
+
+                    <tr>
+
+                      <td
+                        colSpan="7"
+                        className="text-center"
+                      >
+                        No Leave Requests Found
                       </td>
 
                     </tr>
 
-                  ))
+                  )}
 
-                ) : (
+                </tbody>
 
-                  <tr>
+              </table>
 
-                    <td colSpan="7" className="text-center">
-                      No Leave Requests Found
-                    </td>
-
-                  </tr>
-
-                )}
-
-              </tbody>
-
-            </table>
+            </div>
 
           </div>
 
         </div>
 
       </div>
+
     </AdminLayout>
   );
 }

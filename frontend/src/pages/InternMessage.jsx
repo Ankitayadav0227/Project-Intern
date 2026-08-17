@@ -3,63 +3,65 @@ import {
   useRef,
   useState,
 } from "react";
-import axios from "axios";
-import InternLayout from "../layouts/InternLayout";
 
-const API_URL = "http://127.0.0.1:5000";
+import InternLayout from "../layouts/InternLayout";
+import api, { API_URL } from "../api";
 
 function InternMessages() {
-  const intern = JSON.parse(
-    localStorage.getItem("intern")
-  );
+  const internData = localStorage.getItem("intern");
+  const intern = internData
+    ? JSON.parse(internData)
+    : null;
 
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] =
+    useState(null);
 
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] =
+    useState(true);
+
   const [search, setSearch] = useState("");
 
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
   // =====================================================
-  // GET MESSAGES
+  // FETCH MESSAGES
   // =====================================================
 
   const fetchMessages = async () => {
-    if (!intern) return;
+    if (!intern?.intern_id) return;
 
     try {
-      const res = await axios.get(
-        `${API_URL}/messages/intern/${intern.intern_id}`
+      const res = await api.get(
+        `/messages/intern/${intern.intern_id}`
       );
 
       setMessages(res.data.data || []);
     } catch (error) {
-      console.log(
-        "Fetch messages error:",
+      console.error(
+        "FETCH MESSAGES ERROR:",
         error.response?.data || error
       );
     }
   };
 
   // =====================================================
-  // LOAD
+  // LOAD PAGE
   // =====================================================
 
   useEffect(() => {
     if (!intern) {
-      window.location.href = "/";
+      window.location.href = "/login";
       return;
     }
 
     fetchMessages();
 
-    const interval = setInterval(
-      fetchMessages,
-      3000
-    );
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -75,15 +77,16 @@ function InternMessages() {
   }, [messages]);
 
   // =====================================================
-  // FIND ADMIN NAME
+  // ADMIN NAME
   // =====================================================
 
- const adminMessage = messages.find(
-  (msg) => msg.sender === "admin"
-);
+  const adminMessage = messages.find(
+    (msg) => msg.sender === "admin"
+  );
 
-const adminName =
-  adminMessage?.sender_name || "Admin";
+  const adminName =
+    adminMessage?.sender_name || "Admin";
+
   // =====================================================
   // SEND MESSAGE
   // =====================================================
@@ -121,15 +124,9 @@ const adminName =
         );
       }
 
-      await axios.post(
-        `${API_URL}/messages`,
-        formData,
-        {
-          headers: {
-            "Content-Type":
-              "multipart/form-data",
-          },
-        }
+      await api.post(
+        "/messages",
+        formData
       );
 
       setMessage("");
@@ -140,9 +137,10 @@ const adminName =
       }
 
       fetchMessages();
+
     } catch (error) {
-      console.log(
-        "Send message error:",
+      console.error(
+        "SEND MESSAGE ERROR:",
         error.response?.data || error
       );
 
@@ -225,21 +223,26 @@ const adminName =
   // SEARCH
   // =====================================================
 
-  const showAdmin =
-    adminName
-      .toLowerCase()
-      .includes(
-        search.toLowerCase()
-      );
+  const showAdmin = adminName
+    .toLowerCase()
+    .includes(search.toLowerCase());
+
+  // =====================================================
+  // LOGIN CHECK
+  // =====================================================
+
+  if (!intern) return null;
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <InternLayout>
 
       <div className="container-fluid">
 
-        {/* ================================================= */}
         {/* PAGE TITLE */}
-        {/* ================================================= */}
 
         <div className="mb-3">
 
@@ -253,9 +256,7 @@ const adminName =
 
         </div>
 
-        {/* ================================================= */}
         {/* CHAT CARD */}
-        {/* ================================================= */}
 
         <div
           className="card border-0 shadow"
@@ -266,15 +267,12 @@ const adminName =
           }}
         >
 
-          <div
-            className="d-flex h-100"
-          >
+          <div className="d-flex h-100">
 
-            {/* ================================================= */}
             {/* SIDEBAR */}
-            {/* ================================================= */}
 
             {showSidebar && (
+
               <div
                 style={{
                   width: "280px",
@@ -292,18 +290,16 @@ const adminName =
                 <div
                   style={{
                     padding: "18px",
-                    background:
-                      "#f0f2f5",
+                    background: "#f0f2f5",
                     borderBottom:
                       "1px solid #ddd",
                   }}
                 >
 
-                  <div
-                    className="d-flex justify-content-between align-items-center"
-                  >
+                  <div className="d-flex justify-content-between align-items-center">
 
                     <div>
+
                       <h5 className="fw-bold mb-0">
                         Chats
                       </h5>
@@ -311,6 +307,7 @@ const adminName =
                       <small className="text-muted">
                         Messages
                       </small>
+
                     </div>
 
                     <button
@@ -339,19 +336,12 @@ const adminName =
                     style={{
                       background:
                         "#f0f2f5",
-                      borderRadius:
-                        "10px",
-                      padding:
-                        "7px 10px",
+                      borderRadius: "10px",
+                      padding: "7px 10px",
                     }}
                   >
 
-                    <span
-                      style={{
-                        marginRight:
-                          "8px",
-                      }}
-                    >
+                    <span className="me-2">
                       🔍
                     </span>
 
@@ -377,23 +367,19 @@ const adminName =
 
                 </div>
 
-                {/* ADMIN CHAT */}
+                {/* ADMIN */}
 
                 {showAdmin && (
 
                   <div
-                    onClick={() => {}}
                     style={{
                       padding:
                         "12px 15px",
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
+                      display: "flex",
+                      alignItems: "center",
                       background:
                         "#e9edef",
-                      cursor:
-                        "pointer",
+                      cursor: "pointer",
                     }}
                   >
 
@@ -404,23 +390,17 @@ const adminName =
                         width: "48px",
                         height: "48px",
                         minWidth: "48px",
-                        borderRadius:
-                          "50%",
+                        borderRadius: "50%",
                         background:
                           "rgb(2,26,77)",
                         color: "white",
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
+                        display: "flex",
+                        alignItems: "center",
                         justifyContent:
                           "center",
-                        fontWeight:
-                          "bold",
-                        fontSize:
-                          "20px",
-                        marginRight:
-                          "12px",
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        marginRight: "12px",
                       }}
                     >
                       {adminName
@@ -432,24 +412,19 @@ const adminName =
 
                     <div
                       style={{
-                        overflow:
-                          "hidden",
+                        overflow: "hidden",
                       }}
                     >
 
-                      <div
-                        className="fw-bold"
-                      >
+                      <div className="fw-bold">
                         {adminName}
                       </div>
 
                       <div
                         className="text-muted text-truncate"
                         style={{
-                          fontSize:
-                            "13px",
-                          maxWidth:
-                            "170px",
+                          fontSize: "13px",
+                          maxWidth: "170px",
                         }}
                       >
 
@@ -468,25 +443,21 @@ const adminName =
                 )}
 
               </div>
+
             )}
 
-            {/* ================================================= */}
             {/* CHAT SECTION */}
-            {/* ================================================= */}
 
             <div
               style={{
                 flex: 1,
                 minWidth: 0,
                 display: "flex",
-                flexDirection:
-                  "column",
+                flexDirection: "column",
               }}
             >
 
-              {/* ================================================= */}
               {/* CHAT HEADER */}
-              {/* ================================================= */}
 
               <div
                 style={{
@@ -495,16 +466,14 @@ const adminName =
                   background:
                     "rgb(2,26,77)",
                   color: "white",
-                  display:
-                    "flex",
-                  alignItems:
-                    "center",
-                  padding:
-                    "10px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "10px 18px",
                 }}
               >
 
                 {!showSidebar && (
+
                   <button
                     className="btn btn-light me-3"
                     onClick={() =>
@@ -513,6 +482,7 @@ const adminName =
                   >
                     ☰
                   </button>
+
                 )}
 
                 {/* ADMIN AVATAR */}
@@ -521,22 +491,15 @@ const adminName =
                   style={{
                     width: "45px",
                     height: "45px",
-                    borderRadius:
-                      "50%",
-                    background:
-                      "white",
-                    color:
-                      "rgb(2,26,77)",
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
+                    borderRadius: "50%",
+                    background: "white",
+                    color: "rgb(2,26,77)",
+                    display: "flex",
+                    alignItems: "center",
                     justifyContent:
                       "center",
-                    fontWeight:
-                      "bold",
-                    marginRight:
-                      "12px",
+                    fontWeight: "bold",
+                    marginRight: "12px",
                   }}
                 >
                   {adminName
@@ -549,8 +512,7 @@ const adminName =
                   <div
                     className="fw-bold"
                     style={{
-                      fontSize:
-                        "17px",
+                      fontSize: "17px",
                     }}
                   >
                     {adminName}
@@ -564,36 +526,26 @@ const adminName =
 
               </div>
 
-              {/* ================================================= */}
               {/* CHAT BODY */}
-              {/* ================================================= */}
 
               <div
                 style={{
                   flex: 1,
-                  overflowY:
-                    "auto",
-                  padding:
-                    "20px",
-                  background:
-                    "#efeae2",
+                  overflowY: "auto",
+                  padding: "20px",
+                  background: "#efeae2",
                 }}
               >
 
                 {messages.length === 0 ? (
 
-                  <div
-                    className="h-100 d-flex justify-content-center align-items-center"
-                  >
+                  <div className="h-100 d-flex justify-content-center align-items-center">
 
-                    <div
-                      className="text-center"
-                    >
+                    <div className="text-center">
 
                       <div
                         style={{
-                          fontSize:
-                            "60px",
+                          fontSize: "60px",
                         }}
                       >
                         💬
@@ -617,14 +569,12 @@ const adminName =
                   messages.map((msg) => {
 
                     const mine =
-                      msg.sender ===
-                      "intern";
+                      msg.sender === "intern";
 
                     return (
+
                       <div
-                        key={
-                          msg.message_id
-                        }
+                        key={msg.message_id}
                         className={`d-flex mb-2 ${
                           mine
                             ? "justify-content-end"
@@ -634,18 +584,15 @@ const adminName =
 
                         <div
                           style={{
-                            maxWidth:
-                              "70%",
-                            minWidth:
-                              "80px",
+                            maxWidth: "70%",
+                            minWidth: "80px",
                             background:
                               mine
                                 ? "#d9fdd3"
                                 : "#ffffff",
                             padding:
                               "8px 10px",
-                            borderRadius:
-                              "10px",
+                            borderRadius: "10px",
                             boxShadow:
                               "0 1px 2px rgba(0,0,0,0.15)",
                           }}
@@ -654,21 +601,19 @@ const adminName =
                           {/* ADMIN NAME */}
 
                           {!mine && (
+
                             <div
                               style={{
-                                fontSize:
-                                  "12px",
-                                fontWeight:
-                                  "bold",
-                                color:
-                                  "#075e54",
-                                marginBottom:
-                                  "3px",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                color: "#075e54",
+                                marginBottom: "3px",
                               }}
                             >
                               {msg.sender_name ||
                                 adminName}
                             </div>
+
                           )}
 
                           {/* IMAGE */}
@@ -690,12 +635,9 @@ const adminName =
                                     msg.file_name
                                   }
                                   style={{
-                                    width:
-                                      "250px",
-                                    maxWidth:
-                                      "100%",
-                                    maxHeight:
-                                      "250px",
+                                    width: "250px",
+                                    maxWidth: "100%",
+                                    maxHeight: "250px",
                                     objectFit:
                                       "cover",
                                     borderRadius:
@@ -704,6 +646,7 @@ const adminName =
                                 />
 
                               </a>
+
                           )}
 
                           {/* DOCUMENT */}
@@ -720,19 +663,16 @@ const adminName =
                                 style={{
                                   textDecoration:
                                     "none",
-                                  color:
-                                    "#333",
+                                  color: "#333",
                                 }}
                               >
 
                                 <div
                                   style={{
-                                    display:
-                                      "flex",
+                                    display: "flex",
                                     alignItems:
                                       "center",
-                                    padding:
-                                      "8px",
+                                    padding: "8px",
                                     background:
                                       "#f0f2f5",
                                     borderRadius:
@@ -786,41 +726,41 @@ const adminName =
                                 </div>
 
                               </a>
+
                           )}
 
                           {/* TEXT */}
 
                           {msg.message && (
+
                             <div
                               style={{
                                 whiteSpace:
                                   "pre-wrap",
                                 wordBreak:
                                   "break-word",
-                                fontSize:
-                                  "14px",
+                                fontSize: "14px",
                               }}
                             >
                               {msg.message}
                             </div>
+
                           )}
 
-                          {/* TIME + TICKS */}
+                          {/* TIME */}
 
                           <div
                             className="d-flex justify-content-end align-items-center"
                             style={{
                               gap: "4px",
-                              marginTop:
-                                "3px",
+                              marginTop: "3px",
                             }}
                           >
 
                             <small
                               className="text-muted"
                               style={{
-                                fontSize:
-                                  "10px",
+                                fontSize: "10px",
                               }}
                             >
                               {msg.created_at
@@ -841,10 +781,10 @@ const adminName =
                             {/* TICKS */}
 
                             {mine && (
+
                               <span
                                 style={{
-                                  fontSize:
-                                    "13px",
+                                  fontSize: "13px",
                                   fontWeight:
                                     "bold",
                                   color:
@@ -855,6 +795,7 @@ const adminName =
                               >
                                 ✓✓
                               </span>
+
                             )}
 
                           </div>
@@ -862,36 +803,31 @@ const adminName =
                         </div>
 
                       </div>
+
                     );
                   })
+
                 )}
 
-                <div
-                  ref={chatEndRef}
-                />
+                <div ref={chatEndRef} />
 
               </div>
 
-              {/* ================================================= */}
               {/* SELECTED FILE */}
-              {/* ================================================= */}
 
               {selectedFile && (
 
                 <div
                   style={{
-                    background:
-                      "#f0f2f5",
-                    padding:
-                      "7px 12px",
+                    background: "#f0f2f5",
+                    padding: "7px 12px",
                   }}
                 >
 
                   <div
                     className="d-flex justify-content-between align-items-center bg-white p-2"
                     style={{
-                      borderRadius:
-                        "8px",
+                      borderRadius: "8px",
                     }}
                   >
 
@@ -906,9 +842,7 @@ const adminName =
                       className="btn btn-sm btn-light"
                       onClick={() => {
 
-                        setSelectedFile(
-                          null
-                        );
+                        setSelectedFile(null);
 
                         if (
                           fileInputRef.current
@@ -925,18 +859,15 @@ const adminName =
                   </div>
 
                 </div>
+
               )}
 
-              {/* ================================================= */}
-              {/* INPUT */}
-              {/* ================================================= */}
+              {/* MESSAGE INPUT */}
 
               <div
                 style={{
-                  background:
-                    "#f0f2f5",
-                  padding:
-                    "10px",
+                  background: "#f0f2f5",
+                  padding: "10px",
                 }}
               >
 
@@ -947,7 +878,7 @@ const adminName =
                   }}
                 >
 
-                  {/* FILE */}
+                  {/* FILE BUTTON */}
 
                   <button
                     className="btn btn-light"
@@ -968,29 +899,24 @@ const adminName =
                       const file =
                         e.target.files?.[0];
 
-                      if (!file)
-                        return;
+                      if (!file) return;
 
                       if (
                         file.size >
-                        10 *
-                          1024 *
-                          1024
+                        10 * 1024 * 1024
                       ) {
 
                         alert(
                           "Maximum file size is 10 MB"
                         );
 
-                        e.target.value =
-                          "";
+                        e.target.value = "";
 
                         return;
                       }
 
-                      setSelectedFile(
-                        file
-                      );
+                      setSelectedFile(file);
+
                     }}
                   />
 
@@ -1008,7 +934,7 @@ const adminName =
                     😊
                   </button>
 
-                  {/* TEXT */}
+                  {/* MESSAGE */}
 
                   <input
                     type="text"
@@ -1023,14 +949,14 @@ const adminName =
                     onKeyDown={(e) => {
 
                       if (
-                        e.key ===
-                          "Enter" &&
+                        e.key === "Enter" &&
                         !e.shiftKey
                       ) {
 
                         e.preventDefault();
 
                         sendMessage();
+
                       }
 
                     }}
@@ -1043,12 +969,9 @@ const adminName =
                     style={{
                       background:
                         "rgb(2,26,77)",
-                      minWidth:
-                        "50px",
+                      minWidth: "50px",
                     }}
-                    onClick={
-                      sendMessage
-                    }
+                    onClick={sendMessage}
                   >
                     ➤
                   </button>

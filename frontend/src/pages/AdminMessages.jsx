@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import AdminLayout from "../layouts/AdminLayout";
 
-const API_URL = "http://127.0.0.1:5000";
+const API_URL = "https://project-intern-production.up.railway.app";
 
 function AdminMessages() {
   // =========================================================

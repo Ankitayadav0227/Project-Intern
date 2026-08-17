@@ -1,6 +1,7 @@
 import AdminLayout from "../layouts/AdminLayout";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,10 +12,15 @@ import {
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 
-import { Bar, Pie, Line, Doughnut } from "react-chartjs-2";
+import {
+  Bar,
+  Pie,
+  Line,
+  Doughnut,
+} from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -30,57 +36,89 @@ ChartJS.register(
 
 function Analytics() {
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
-    try {
-      const res = await axios.get(
-    "http://127.0.0.1:5000/analytics"
-);
-
-      setAnalytics(res.data);
-
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  // Temporary Data
-  // Later we'll replace this with API data
+  // ---------------- ANALYTICS STATE ----------------
 
   const [analytics, setAnalytics] = useState({
     worklogs: [],
     departments: [],
     attendance: [],
     leaves: [],
-    topInterns: []
+    topInterns: [],
   });
 
+  const [loading, setLoading] = useState(true);
+
+  // ---------------- FETCH ANALYTICS ----------------
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+
+      const res = await api.get("/analytics");
+
+      setAnalytics({
+        worklogs: res.data.worklogs || [],
+        departments: res.data.departments || [],
+        attendance: res.data.attendance || [],
+        leaves: res.data.leaves || [],
+        topInterns: res.data.topInterns || [],
+      });
+
+    } catch (err) {
+      console.error(
+        "FETCH ANALYTICS ERROR:",
+        err
+      );
+
+      alert(
+        err.response?.data?.message ||
+          "Unable to load analytics"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  // ---------------- WORK LOG DATA ----------------
+
   const workLogData = {
-    labels: analytics.worklogs.map(item => item.status),
+    labels: analytics.worklogs.map(
+      (item) => item.status
+    ),
 
     datasets: [
       {
         label: "Work Logs",
-        data: analytics.worklogs.map(item => item.total),
+
+        data: analytics.worklogs.map(
+          (item) => item.total
+        ),
 
         backgroundColor: [
           "#28a745",
           "#ffc107",
-          "#dc3545"
-        ]
-      }
-    ]
+          "#dc3545",
+        ],
+      },
+    ],
   };
 
+  // ---------------- DEPARTMENT DATA ----------------
+
   const departmentData = {
-    labels: analytics.departments.map(item => item.department),
+    labels: analytics.departments.map(
+      (item) => item.department
+    ),
 
     datasets: [
       {
-        data: analytics.departments.map(item => item.total),
+        data: analytics.departments.map(
+          (item) => item.total
+        ),
 
         backgroundColor: [
           "#007bff",
@@ -88,58 +126,106 @@ function Analytics() {
           "#ffc107",
           "#dc3545",
           "#6610f2",
-          "#20c997"
-        ]
-      }
-    ]
+          "#20c997",
+        ],
+      },
+    ],
   };
 
+  // ---------------- ATTENDANCE DATA ----------------
+
   const attendanceData = {
-    labels: analytics.attendance.map(item => item.attendance_date),
+    labels: analytics.attendance.map(
+      (item) => item.attendance_date
+    ),
 
     datasets: [
       {
         label: "Attendance",
 
-        data: analytics.attendance.map(item => item.total),
+        data: analytics.attendance.map(
+          (item) => item.total
+        ),
 
         borderColor: "#0d6efd",
 
         backgroundColor: "#0d6efd",
 
-        tension: 0.4
-      }
-    ]
+        tension: 0.4,
+      },
+    ],
   };
 
+  // ---------------- LEAVE DATA ----------------
+
   const leaveData = {
-    labels: analytics.leaves.map(item => item.status),
+    labels: analytics.leaves.map(
+      (item) => item.status
+    ),
 
     datasets: [
       {
-        data: analytics.leaves.map(item => item.total),
+        data: analytics.leaves.map(
+          (item) => item.total
+        ),
 
         backgroundColor: [
           "#198754",
           "#ffc107",
-          "#dc3545"
-        ]
-      }
-    ]
+          "#dc3545",
+        ],
+      },
+    ],
   };
+
+  // ---------------- TOP INTERN DATA ----------------
+
   const topInternData = {
-    labels: analytics.topInterns.map(item => item.full_name),
+    labels: analytics.topInterns.map(
+      (item) => item.full_name
+    ),
 
     datasets: [
       {
         label: "Hours Worked",
 
-        data: analytics.topInterns.map(item => item.total_hours),
+        data: analytics.topInterns.map(
+          (item) => item.total_hours
+        ),
 
-        backgroundColor: "#6610f2"
-      }
-    ]
+        backgroundColor: "#6610f2",
+      },
+    ],
   };
+
+  // ---------------- LOADING ----------------
+
+  if (loading) {
+    return (
+      <AdminLayout>
+
+        <div className="container-fluid mt-4">
+
+          <div className="text-center py-5">
+
+            <div
+              className="spinner-border text-primary"
+              role="status"
+            ></div>
+
+            <p className="mt-3">
+              Loading analytics...
+            </p>
+
+          </div>
+
+        </div>
+
+      </AdminLayout>
+    );
+  }
+
+  // ---------------- UI ----------------
 
   return (
     <AdminLayout>
@@ -152,48 +238,76 @@ function Analytics() {
 
         <div className="row">
 
+          {/* WORK LOG STATUS */}
+
           <div className="col-lg-6 mb-4">
+
             <div className="card shadow p-3">
+
               <h5 className="text-center">
                 Work Log Status
               </h5>
 
               <Bar data={workLogData} />
+
             </div>
+
           </div>
 
+          {/* DEPARTMENT DISTRIBUTION */}
+
           <div className="col-lg-6 mb-4">
+
             <div className="card shadow p-3">
+
               <h5 className="text-center">
                 Department Distribution
               </h5>
 
               <Pie data={departmentData} />
+
             </div>
+
           </div>
 
+          {/* ATTENDANCE */}
+
           <div className="col-lg-12 mb-4">
+
             <div className="card shadow p-3">
+
               <h5 className="text-center">
                 Weekly Attendance Trend
               </h5>
 
               <Line data={attendanceData} />
+
             </div>
+
           </div>
 
+          {/* LEAVES */}
+
           <div className="col-lg-6 mb-4">
+
             <div className="card shadow p-3">
+
               <h5 className="text-center">
                 Leave Requests
               </h5>
 
               <Doughnut data={leaveData} />
+
             </div>
+
           </div>
 
+          {/* TOP INTERNS */}
+
           <div className="col-lg-6 mb-4">
+
             <div className="card shadow p-3">
+
               <h5 className="text-center">
                 Top Interns
               </h5>
@@ -201,10 +315,12 @@ function Analytics() {
               <Bar
                 data={topInternData}
                 options={{
-                  indexAxis: "y"
+                  indexAxis: "y",
                 }}
               />
+
             </div>
+
           </div>
 
         </div>

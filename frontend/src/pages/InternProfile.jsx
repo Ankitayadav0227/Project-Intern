@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import InternSidebar from "../components/InternSidebar";
 import InternNavbar from "../components/InternNavbar";
+import api, { API_URL } from "../api";
 
 function InternProfile() {
   const internData = localStorage.getItem("intern");
@@ -17,6 +17,7 @@ function InternProfile() {
     department: "",
   });
 
+  // ---------------- LOGIN CHECK + FETCH PROFILE ----------------
   useEffect(() => {
     if (!intern) {
       window.location.href = "/login";
@@ -26,10 +27,11 @@ function InternProfile() {
     fetchProfile();
   }, []);
 
+  // ---------------- FETCH PROFILE ----------------
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(
-        `http://127.0.0.1:5000/intern/${intern.intern_id}`
+      const res = await api.get(
+        `/intern/${intern.intern_id}`
       );
 
       setProfile(res.data);
@@ -40,34 +42,44 @@ function InternProfile() {
         phone: res.data.phone || "",
         department: res.data.department || "",
       });
-
     } catch (error) {
-      console.log(error);
+      console.error("FETCH PROFILE ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Unable to load profile"
+      );
     }
   };
 
-
+  // ---------------- UPDATE PROFILE ----------------
   const updateProfile = async () => {
     try {
-      await axios.put(
-        `http://127.0.0.1:5000/update-profile/${intern.intern_id}`,
+      const res = await api.put(
+        `/update-profile/${intern.intern_id}`,
         formData
       );
 
-      alert("Profile Updated Successfully");
+      alert(
+        res.data.message ||
+          "Profile Updated Successfully"
+      );
 
       setShowEdit(false);
+
       fetchProfile();
 
     } catch (error) {
-      console.log(error);
-      alert("Update Failed");
+      console.error("UPDATE PROFILE ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Update Failed"
+      );
     }
   };
 
-
   if (!intern) return null;
-
 
   return (
     <div className="d-flex">
@@ -88,7 +100,7 @@ function InternProfile() {
 
           <div className="card shadow border-0">
 
-            {/* Cover */}
+            {/* COVER */}
             <div
               style={{
                 height: "220px",
@@ -97,8 +109,7 @@ function InternProfile() {
               }}
             ></div>
 
-
-            {/* Profile Header */}
+            {/* PROFILE HEADER */}
             <div
               className="text-center"
               style={{
@@ -106,10 +117,11 @@ function InternProfile() {
               }}
             >
 
+              {/* PROFILE IMAGE */}
               <img
                 src={
                   profile.profile_image
-                    ? `http://127.0.0.1:5000/${profile.profile_image}`
+                    ? `${API_URL}/${profile.profile_image}`
                     : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
                 }
                 alt="Profile"
@@ -121,16 +133,13 @@ function InternProfile() {
                 }}
               />
 
-
               <h2 className="mt-3 fw-bold">
                 {profile.full_name || "Intern"}
               </h2>
 
-
               <p className="text-muted">
                 {profile.department || "Department"}
               </p>
-
 
               <button
                 className="btn btn-primary"
@@ -141,15 +150,12 @@ function InternProfile() {
 
             </div>
 
-
-
-            {/* Details */}
-
+            {/* DETAILS */}
             <div className="card-body p-5">
 
               <div className="row">
 
-
+                {/* PERSONAL INFORMATION */}
                 <div className="col-md-6 mb-4">
 
                   <div className="card shadow-sm h-100">
@@ -162,30 +168,25 @@ function InternProfile() {
 
                       <hr />
 
-
                       <p>
                         <strong>Name:</strong>{" "}
-                        {profile.full_name}
+                        {profile.full_name || "-"}
                       </p>
-
 
                       <p>
                         <strong>Email:</strong>{" "}
-                        {profile.email}
+                        {profile.email || "-"}
                       </p>
-
 
                       <p>
                         <strong>Phone:</strong>{" "}
-                        {profile.phone}
+                        {profile.phone || "-"}
                       </p>
-
 
                       <p>
                         <strong>Department:</strong>{" "}
-                        {profile.department}
+                        {profile.department || "-"}
                       </p>
-
 
                     </div>
 
@@ -193,8 +194,7 @@ function InternProfile() {
 
                 </div>
 
-
-
+                {/* INTERNSHIP DETAILS */}
                 <div className="col-md-6 mb-4">
 
                   <div className="card shadow-sm h-100">
@@ -207,12 +207,10 @@ function InternProfile() {
 
                       <hr />
 
-
                       <p>
                         <strong>Intern ID:</strong>{" "}
-                        {profile.intern_id}
+                        {profile.intern_id || "-"}
                       </p>
-
 
                       <p>
                         <strong>Status:</strong>
@@ -223,17 +221,15 @@ function InternProfile() {
 
                       </p>
 
-
                       <p>
-                        <strong>Role:</strong> Intern
+                        <strong>Role:</strong>{" "}
+                        Intern
                       </p>
-
 
                       <p>
                         <strong>Organization:</strong>{" "}
                         MidBrains Technologies
                       </p>
-
 
                     </div>
 
@@ -241,27 +237,24 @@ function InternProfile() {
 
                 </div>
 
-
               </div>
 
-
-
-              {/* Edit Modal */}
-
+              {/* EDIT MODAL */}
               {showEdit && (
 
                 <div
                   className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
                   style={{
-                    background:"rgba(0,0,0,.5)",
-                    zIndex:9999
+                    background: "rgba(0,0,0,.5)",
+                    zIndex: 9999,
                   }}
                 >
 
                   <div
                     className="bg-white rounded shadow p-4"
                     style={{
-                      width:"450px"
+                      width: "450px",
+                      maxWidth: "90%",
                     }}
                   >
 
@@ -269,68 +262,71 @@ function InternProfile() {
                       Edit Profile
                     </h3>
 
-
+                    {/* NAME */}
                     <input
                       className="form-control mb-3"
                       placeholder="Full Name"
                       value={formData.full_name}
-                      onChange={(e)=>
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          full_name:e.target.value
+                          full_name: e.target.value,
                         })
                       }
                     />
 
-
+                    {/* EMAIL */}
                     <input
+                      type="email"
                       className="form-control mb-3"
                       placeholder="Email"
                       value={formData.email}
-                      onChange={(e)=>
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          email:e.target.value
+                          email: e.target.value,
                         })
                       }
                     />
 
-
+                    {/* PHONE */}
                     <input
+                      type="text"
                       className="form-control mb-3"
                       placeholder="Phone"
                       value={formData.phone}
-                      onChange={(e)=>
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          phone:e.target.value
+                          phone: e.target.value,
                         })
                       }
                     />
 
-
+                    {/* DEPARTMENT */}
                     <input
                       className="form-control mb-4"
                       placeholder="Department"
                       value={formData.department}
-                      onChange={(e)=>
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          department:e.target.value
+                          department: e.target.value,
                         })
                       }
                     />
 
-
+                    {/* BUTTONS */}
                     <div className="text-end">
 
                       <button
                         className="btn btn-secondary me-2"
-                        onClick={() => setShowEdit(false)}
+                        onClick={() =>
+                          setShowEdit(false)
+                        }
                       >
                         Cancel
                       </button>
-
 
                       <button
                         className="btn btn-primary"
@@ -341,13 +337,11 @@ function InternProfile() {
 
                     </div>
 
-
                   </div>
 
                 </div>
 
               )}
-
 
             </div>
 
@@ -361,4 +355,4 @@ function InternProfile() {
   );
 }
 
-export default InternProfile; 
+export default InternProfile;
